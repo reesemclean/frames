@@ -1,1 +1,16 @@
-/* clock widget styles */
+/* Clock widget. --clk-fs is set inline for fixed sizes and by the
+   ResizeObserver for auto; 96px until then (and in the server render). */
+.w--clock { --clk-fs: 96px; }
+.w--clock .clk { height: 100%; display: flex; flex-direction: column; justify-content: center; }
+.clk-row { display: flex; align-items: baseline; white-space: nowrap; line-height: .82; }
+.clk-time { font-size: var(--clk-fs); letter-spacing: -.04em; }
+.clk-sec { font-size: calc(var(--clk-fs) * .42); color: var(--mute); margin-left: .06em; }
+.clk-ampm {
+  font-size: calc(var(--clk-fs) * .24); font-weight: 800; letter-spacing: .04em;
+  color: var(--ink-2); margin-left: .35em;
+}
+.clk-date {
+  font-size: calc(var(--clk-fs) * .3); line-height: 1.1;
+  margin-top: calc(var(--clk-fs) * .16);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-2);
+}

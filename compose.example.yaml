@@ -1,0 +1,27 @@
+# How the homelab runs it (stacks/frames there adds the Traefik and
+# homepage labels). Secrets come from the environment, never this file.
+services:
+  frames:
+    image: ghcr.io/reesemclean/frames:dev
+    container_name: frames
+    restart: unless-stopped
+    user: "1000:1000"
+    ports:
+      - "3000:3000"
+    environment:
+      FRAMES_TZ: America/Phoenix          # the household's zone; every time shown uses it
+      FRAMES_LATITUDE: "33.45"            # weather location
+      FRAMES_LONGITUDE: "-112.07"
+      ICLOUD_USERNAME: ${ICLOUD_USERNAME}
+      ICLOUD_APP_PASSWORD: ${ICLOUD_APP_PASSWORD}   # app-specific password
+      CALENDAR_NAMES: ${CALENDAR_NAMES:-}           # comma-separated; empty = all calendars
+      FRAMES_SHARED_ALBUM_TOKEN: ${FRAMES_SHARED_ALBUM_TOKEN:-}  # part after '#' in the album link
+      FRAMES_PHOTOS_DIR: /photos          # the folder source; leave unset to use only the album
+      FRAMES_STARS_SEED: ${FRAMES_STARS_SEED:-}
+    volumes:
+      - ./data:/data                      # SQLite: stars, photo index. Back this up.
+      - ./cache:/cache                    # resized photos, source snapshots; regenerable
+      # Mounting this hides the image's built-in example.html; put every
+      # dashboard you want served in this folder.
+      - ./dashboards:/dashboards:ro
+      - /mnt/photos:/photos:ro

@@ -1,1 +1,6 @@
-/* photos widget styles */
+/* A bleed widget: no .card, just the photo with the card's corners. */
+.w--photos { position: relative; }
+.ph {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+  border-radius: var(--r); overflow: hidden; background: #1a1917;
+}

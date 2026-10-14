@@ -1,0 +1,12 @@
+.git
+.github
+node_modules
+.output
+.nitro
+.tanstack
+.local
+dist
+tests
+*.log
+*.md
+compose*.yaml

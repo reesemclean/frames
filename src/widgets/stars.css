@@ -1,1 +1,89 @@
-/* stars widget styles */
+/* Stars. Per-kid colours arrive as --c (fill), --c-text (readable on the
+   card) and --c-soft (done-state tint), set by Stars.tsx. --st-name and
+   --st-goal scale with the panel height. Animations are transform/opacity
+   only (plus fill-opacity on the star being held). */
+.st { height: 100%; display: flex; flex-direction: column; gap: 8px; }
+.st-kids { flex: 1; min-height: 0; display: flex; gap: var(--gap); }
+.st-kids.is-row { flex-direction: row; }
+.st-kids.is-col { flex-direction: column; }
+.st-empty { margin: auto; max-width: 420px; text-align: center; font-size: var(--fs-m); color: var(--mute); }
+.st-stale { flex: none; text-align: right; }
+
+.st-kid {
+  flex: 1 1 0; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column;
+  padding: 14px 18px 12px; border-radius: var(--r-s);
+  background: var(--paper); border: 2px solid transparent;
+  transition: background-color .4s, border-color .4s;
+}
+
+.st-head { flex: none; display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.st-name {
+  flex: none; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--st-name, 34px); font-weight: 900; line-height: 1.05; color: var(--c-text, var(--ink));
+}
+.st-goal {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--st-goal, 24px); line-height: 1.1; color: var(--ink-2);
+}
+.st-donehead { display: none; flex: none; min-width: 0; }
+.st-yay { font-size: var(--st-name, 34px); line-height: 1.05; color: var(--c-text, var(--ink)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Stars share the row; each SVG fits its slot, so size follows the cell. */
+.st-row { flex: 1; min-height: 0; display: flex; align-items: stretch; gap: 2px; padding: 6px 0; }
+.st-slot { flex: 1 1 0; min-width: 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+.st-slot svg { width: 100%; height: 100%; max-width: 150px; max-height: 150px; overflow: visible; }
+.st-slot path {
+  fill: var(--c, var(--ok)); fill-opacity: 0;
+  stroke: var(--line); stroke-width: 1.6; stroke-linejoin: round;
+}
+.st-slot.is-on path { fill-opacity: 1; stroke: var(--c); }
+.st-slot.is-pending path { fill-opacity: .45; stroke: var(--c); }
+
+/* Holding: the next star fills and grows, and a bar sweeps under the row. */
+.st-kid.is-holding .st-slot.is-next path { fill-opacity: .9; stroke: var(--c); transition: fill-opacity var(--hold, 1000ms) linear; }
+.st-kid.is-holding .st-slot.is-next svg { transform: scale(1.12); transition: transform var(--hold, 1000ms) linear; }
+
+.st-slot.is-new svg { animation: st-pop .45s var(--ease); }
+@keyframes st-pop { 0% { transform: scale(.4) rotate(-25deg); } 70% { transform: scale(1.15); } 100% { transform: none; } }
+
+.st-foot { flex: none; position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 32px; }
+.st-count { flex: none; white-space: nowrap; font-size: 22px; color: var(--ink-2); }
+.st-hint { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 17px; font-weight: 700; color: var(--mute); opacity: 0; transition: opacity .2s; white-space: nowrap; }
+.st-kid.is-hint .st-hint { opacity: 1; }
+.st-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 4px; border-radius: 2px;
+  background: var(--c, var(--ok)); transform: scaleX(0); transform-origin: 0 50%;
+}
+.st-kid.is-holding .st-bar { transform: scaleX(1); transition: transform var(--hold, 1000ms) linear; }
+
+/* Done */
+.st-donefoot { display: none; flex: none; justify-content: center; }
+.st-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 700; color: var(--ink-2); margin-top: 2px; }
+.st-new {
+  position: relative; overflow: hidden; flex: none;
+  max-width: 100%; min-height: var(--tap); padding: 8px 24px; border-radius: 999px;
+  background: var(--ink); color: var(--paper); font-size: 17px; font-weight: 800; line-height: 1.15; text-align: center;
+}
+.st-new > span { position: relative; }
+.st-new::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 100%;
+  background: var(--c, var(--ok)); transform: scaleX(0); transform-origin: 0 50%;
+}
+.st-new.is-holding::before { transform: scaleX(1); transition: transform var(--hold, 1000ms) linear; }
+
+.st-kid.is-done { background: var(--c-soft, var(--paper-2)); border-color: var(--c, var(--line)); }
+.st-kid.is-done .st-head, .st-kid.is-done .st-foot { display: none; }
+.st-kid.is-done .st-donehead { display: block; }
+.st-kid.is-done .st-donefoot { display: flex; }
+
+/* One-shot cheer when a chart completes: the stars hop in turn. */
+.st-kid.is-cheer .st-slot.is-on svg { animation: st-hop .5s var(--ease) both; }
+.st-kid.is-cheer .st-slot:nth-child(2) svg { animation-delay: .07s; }
+.st-kid.is-cheer .st-slot:nth-child(3) svg { animation-delay: .14s; }
+.st-kid.is-cheer .st-slot:nth-child(4) svg { animation-delay: .21s; }
+.st-kid.is-cheer .st-slot:nth-child(5) svg { animation-delay: .28s; }
+.st-kid.is-cheer .st-slot:nth-child(6) svg { animation-delay: .35s; }
+.st-kid.is-cheer .st-slot:nth-child(7) svg { animation-delay: .42s; }
+.st-kid.is-cheer .st-slot:nth-child(8) svg { animation-delay: .49s; }
+@keyframes st-hop { 0% { transform: none; } 40% { transform: translateY(-14%) scale(1.15); } 100% { transform: none; } }

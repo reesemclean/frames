@@ -1,1 +1,60 @@
-/* modes: takeover + night overlays */
+/* Modes (components/Modes.tsx). Each overlay shows from its own is-on class,
+   which the server renders too: a night boot paints the night screen in the
+   HTML, before any JS runs. #stage[data-mode] (day | photos | night |
+   nightdash) is set as well, for everything else.
+   Takeover and night sit above everything, sheets and toasts included; the
+   nightdash dimmer sits above the board but below sheets (70) and toasts
+   (80), and lets taps through. */
+
+/* Photos takeover */
+.takeover {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 90;
+  display: none; background: #000000; color: #ffffff; cursor: pointer;
+}
+.takeover.is-on { display: block; }
+.tk-stage { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+.tk-scrim {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 55%; pointer-events: none;
+  background: linear-gradient(0deg, rgba(0, 0, 0, .72), rgba(0, 0, 0, 0));
+}
+.tk-info {
+  position: absolute; left: 56px; right: 56px; bottom: 44px;
+  display: flex; justify-content: space-between; align-items: flex-end; gap: 32px;
+  pointer-events: none; text-shadow: 0 1px 6px rgba(0, 0, 0, .35);
+}
+.tk-time { font-size: 200px; line-height: .78; letter-spacing: -.04em; white-space: nowrap; }
+.tk-ampm { font-size: 44px; letter-spacing: .02em; margin-left: 14px; }
+.tk-date { font-size: 38px; margin-top: 18px; }
+.tk-right { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; min-width: 0; }
+.tk-wx { display: flex; align-items: center; gap: 14px; }
+.tk-wx .num { font-size: 72px; line-height: .8; }
+.tk-wx-icon { flex: none; }
+.tk-wx small { font-family: var(--serif); font-size: 30px; font-style: italic; }
+.tk-next {
+  display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 22px; border-radius: 999px;
+  max-width: 560px; background: rgba(255, 255, 255, .18); font-size: 21px; font-weight: 700; text-shadow: none;
+}
+.tk-next span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tk-next i { flex: none; width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 2px #ffffff; }
+.tk-stale { color: rgba(255, 255, 255, .7); font-size: 15px; }
+
+/* Night: dim red clock on black, kept above a readable minimum */
+.night {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 91;
+  display: none; align-items: center; justify-content: center; background: #000000; cursor: pointer;
+}
+.night.is-on { display: flex; }
+.stage[data-mode="night"], .stage[data-mode="photos"] { background: #000000; }
+.nt-inner { text-align: center; color: #a02618; }
+.nt-time { font-size: 260px; line-height: .8; letter-spacing: -.04em; color: var(--night); }
+.nt-line { margin: 40px auto 0; max-width: 1120px; font-size: 26px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt-line b { color: var(--night); font-weight: 700; }
+.nt-sep { color: #6a180f; margin: 0 6px; }
+.nt-stale { margin-top: 14px; font-size: 15px; font-style: italic; color: #6a180f; }
+
+/* Nightdash: the dashboard, dimmed */
+.nightdim {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 60;
+  display: none; background: rgba(0, 0, 0, .55); pointer-events: none;
+}
+.nightdim.is-on { display: block; }

@@ -4,6 +4,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Envelope } from './types'
 import * as time from './time'
+import { useMinute } from './clock'
 
 export interface PollState<T> {
   data: T | null
@@ -27,9 +28,26 @@ async function getJSON<T>(path: string, signal?: AbortSignal): Promise<Envelope<
   }
 }
 
+/**
+ * Is what this frame shows out of date? The server's own `stale` covers its
+ * upstreams; `fetchedAt` (this frame's last successful poll) covers the frame
+ * not hearing from the server at all, whatever the reason. Three missed polls
+ * is out of date. The server's `updated` can't be used for that: some sources
+ * refresh upstream less often than the frame polls.
+ */
+export function isStale(env: { stale: boolean } | undefined, fetchedAt: number, everyMs: number, offline: boolean, now: number): boolean {
+  return !env || env.stale || offline || now - fetchedAt > 3 * everyMs
+}
+
 /** Poll an /api/<source> envelope every `everyMs`. One query per path, shared. */
 export function usePoll<T>(path: string, everyMs: number): PollState<T> {
+  // Re-render each minute so the age check below moves even when no poll lands.
+  useMinute()
   const q = useQuery({
+    // Keep polling through the browser's 'offline' events. In the default
+    // 'online' mode they pause every query silently (no failure, no stale
+    // mark); each attempt is already bounded by getJSON's timeout.
+    networkMode: 'always',
     queryKey: [path],
     queryFn: ({ signal }) => getJSON<T>(path, signal),
     refetchInterval: everyMs,
@@ -46,7 +64,7 @@ export function usePoll<T>(path: string, everyMs: number): PollState<T> {
   return {
     data: env?.data ?? null,
     updated: env?.updated ?? null,
-    stale: !env || env.stale || offline,
+    stale: isStale(env, q.dataUpdatedAt, everyMs, offline, Date.now()),
     error: env?.error ?? null,
     offline,
   }

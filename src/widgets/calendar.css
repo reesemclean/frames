@@ -1,1 +1,54 @@
-/* calendar widget styles */
+/* Calendar widget. WebView 106: no nesting, :has(), color-mix() or 8-digit
+   hex; per-event colours arrive as --c / --ct (an rgba() tint). */
+.w--calendar > .card { height: 100%; }
+.cal { display: flex; flex-direction: column; gap: 12px; }
+
+.cal-head { display: flex; align-items: baseline; gap: 12px; flex: none; min-width: 0; }
+.cal-title { flex: none; }
+.cal-date { font-size: var(--fs-label); font-weight: 700; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-stale { margin-left: auto; white-space: nowrap; }
+
+.cal-body { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
+.cal-more { flex: none; font-size: 16px; font-weight: 700; color: var(--mute); padding-left: 18px; }
+
+/* Before the first data: three faint bars, no spinner. */
+.cal-wait { display: flex; flex-direction: column; gap: 14px; padding-top: 4px; }
+.cal-wait i { display: block; height: 22px; border-radius: 6px; background: var(--paper-2); }
+.cal-wait i:nth-child(2) { width: 70%; }
+.cal-wait i:nth-child(3) { width: 45%; }
+
+.cal-day { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.cal-dh { display: flex; align-items: baseline; gap: 8px; color: var(--ink); }
+.cal-dh small { font-size: 13px; color: var(--mute); letter-spacing: .06em; }
+
+/* All-day chips: at most two lines; the rest are clipped, not scrolled. */
+.cal-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 82px; overflow: hidden; flex: none; }
+.cal-chip {
+  display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+  height: 38px; padding: 0 14px 0 12px; border-radius: 999px; background: var(--ct);
+}
+.cal-chip i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.cal-chip b { font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Today's timed rows */
+.cal-ev { display: flex; align-items: stretch; gap: 12px; min-height: 58px; padding: 6px 10px 6px 0; border-radius: var(--r-s); flex: none; }
+.cal-bar { width: 6px; border-radius: 3px; background: var(--c); flex: none; }
+.cal-n { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; line-height: 1.2; }
+.cal-n b { font-size: 22px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-n small { font-size: 16px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.cal-tag { align-self: center; flex: none; font-size: 13px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--c); }
+.cal-tag:empty { display: none; }
+
+.cal-ev.is-now { background: var(--ct); padding-left: 0; }
+.cal-ev.is-next .cal-n b { color: var(--ink); }
+.cal-ev.is-past { opacity: .42; }
+.cal-ev.is-past .cal-bar { background: var(--line); }
+
+/* Upcoming days: one line each */
+.cal-ev--compact { min-height: 34px; padding: 2px 0; align-items: center; }
+.cal-ev--compact .cal-bar { align-self: stretch; width: 4px; }
+.cal-t { flex: none; width: 8.6em; font-size: 15px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-ev--compact .cal-n b { font-size: 19px; font-weight: 600; }
+
+.cal-free { font-size: 26px; font-style: italic; color: var(--mute); padding: 4px 0; }
+.cal-free--later { font-size: 20px; }

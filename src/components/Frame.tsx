@@ -4,11 +4,14 @@
 import { useEffect } from 'react'
 import type { Dashboard } from '~/server/dashboards'
 import * as time from '~/lib/time'
-import { onMinute, retick, startClock } from '~/lib/clock'
+import { retick, startClock } from '~/lib/clock'
+import { scheduleDailyReload } from '~/lib/reload'
 import { touched } from '~/lib/mode'
+import { DashboardOptionsContext } from '~/lib/dashboard'
 import { UIProvider } from './ui'
 import { DashboardTree } from './DashboardTree'
 import { Modes } from './Modes'
+import { Boundary } from './ErrorBoundary'
 
 declare global {
   interface Window { FRAMES?: { started?: boolean } }
@@ -40,31 +43,33 @@ export function Frame({ dash }: { dash: Dashboard }) {
     const touch = () => touched()
     document.addEventListener('pointerdown', touch, true)
 
-    // Daily reload, never in the first 10 minutes (a frame booting at 03:00
-    // shouldn't loop), never in a ?at= preview.
-    const startedAt = Date.now()
-    const off = onMinute(() => {
-      const p = time.parts()
-      if (!at && p.mins === time.hm(dash.options.reloadAt) && Date.now() - startedAt > 600_000) location.reload()
-    })
+    // Module-level, so it outlives this effect (see lib/reload.ts).
+    scheduleDailyReload(dash.options.reloadAt)
 
     window.FRAMES = { ...(window.FRAMES || {}), started: true }
     return () => {
       window.removeEventListener('resize', fit)
       document.removeEventListener('pointerdown', touch, true)
-      off()
     }
   }, [dash.options.reloadAt])
 
   return (
     <div className="stage" id="stage" data-mode="day">
       {dash.css && <style dangerouslySetInnerHTML={{ __html: dash.css }} />}
+      <DashboardOptionsContext.Provider value={dash.options}>
       <UIProvider>
         <main className="board" id="board">
-          <DashboardTree nodes={dash.tree} />
+          {/* Keeps #stage (and so the page's own recovery) alive if the
+              tree itself throws; widgets also have their own boundaries. */}
+          <Boundary name="dashboard" fallback={null}>
+            <DashboardTree nodes={dash.tree} />
+          </Boundary>
         </main>
-        <Modes options={dash.options} />
+        <Boundary name="modes" fallback={null}>
+          <Modes options={dash.options} />
+        </Boundary>
       </UIProvider>
+      </DashboardOptionsContext.Provider>
     </div>
   )
 }

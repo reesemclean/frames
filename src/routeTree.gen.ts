@@ -11,10 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SlugRouteImport } from './routes/$slug'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as ApiCalendarRouteImport } from './routes/api/calendar'
 import { Route as ApiPhotosRouteImport } from './routes/api/photos'
 import { Route as ApiWeatherRouteImport } from './routes/api/weather'
+import { Route as PhotosSplatRouteImport } from './routes/photos/$'
+import { Route as ApiStarsIndexRouteImport } from './routes/api/stars/index'
+import { Route as ApiStarsKidAwardRouteImport } from './routes/api/stars/$kid/award'
+import { Route as ApiStarsKidNewChartRouteImport } from './routes/api/stars/$kid/new-chart'
+import { Route as ApiStarsAwardsIdRouteImport } from './routes/api/stars/awards/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -24,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const SlugRoute = SlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HealthzRoute = HealthzRouteImport.update({
@@ -46,66 +57,133 @@ const ApiWeatherRoute = ApiWeatherRouteImport.update({
   path: '/api/weather',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PhotosSplatRoute = PhotosSplatRouteImport.update({
+  id: '/photos/$',
+  path: '/photos/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStarsIndexRoute = ApiStarsIndexRouteImport.update({
+  id: '/api/stars/',
+  path: '/api/stars/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStarsKidAwardRoute = ApiStarsKidAwardRouteImport.update({
+  id: '/api/stars/$kid/award',
+  path: '/api/stars/$kid/award',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStarsKidNewChartRoute = ApiStarsKidNewChartRouteImport.update({
+  id: '/api/stars/$kid/new-chart',
+  path: '/api/stars/$kid/new-chart',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiStarsAwardsIdRoute = ApiStarsAwardsIdRouteImport.update({
+  id: '/api/stars/awards/$id',
+  path: '/api/stars/awards/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
+  '/admin': typeof AdminRoute
   '/healthz': typeof HealthzRoute
   '/api/calendar': typeof ApiCalendarRoute
   '/api/photos': typeof ApiPhotosRoute
   '/api/weather': typeof ApiWeatherRoute
+  '/photos/$': typeof PhotosSplatRoute
+  '/api/stars/': typeof ApiStarsIndexRoute
+  '/api/stars/$kid/award': typeof ApiStarsKidAwardRoute
+  '/api/stars/$kid/new-chart': typeof ApiStarsKidNewChartRoute
+  '/api/stars/awards/$id': typeof ApiStarsAwardsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
+  '/admin': typeof AdminRoute
   '/healthz': typeof HealthzRoute
   '/api/calendar': typeof ApiCalendarRoute
   '/api/photos': typeof ApiPhotosRoute
   '/api/weather': typeof ApiWeatherRoute
+  '/photos/$': typeof PhotosSplatRoute
+  '/api/stars': typeof ApiStarsIndexRoute
+  '/api/stars/$kid/award': typeof ApiStarsKidAwardRoute
+  '/api/stars/$kid/new-chart': typeof ApiStarsKidNewChartRoute
+  '/api/stars/awards/$id': typeof ApiStarsAwardsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$slug': typeof SlugRoute
+  '/admin': typeof AdminRoute
   '/healthz': typeof HealthzRoute
   '/api/calendar': typeof ApiCalendarRoute
   '/api/photos': typeof ApiPhotosRoute
   '/api/weather': typeof ApiWeatherRoute
+  '/photos/$': typeof PhotosSplatRoute
+  '/api/stars/': typeof ApiStarsIndexRoute
+  '/api/stars/$kid/award': typeof ApiStarsKidAwardRoute
+  '/api/stars/$kid/new-chart': typeof ApiStarsKidNewChartRoute
+  '/api/stars/awards/$id': typeof ApiStarsAwardsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/$slug'
+    | '/admin'
     | '/healthz'
     | '/api/calendar'
     | '/api/photos'
     | '/api/weather'
+    | '/photos/$'
+    | '/api/stars/'
+    | '/api/stars/$kid/award'
+    | '/api/stars/$kid/new-chart'
+    | '/api/stars/awards/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/$slug'
+    | '/admin'
     | '/healthz'
     | '/api/calendar'
     | '/api/photos'
     | '/api/weather'
+    | '/photos/$'
+    | '/api/stars'
+    | '/api/stars/$kid/award'
+    | '/api/stars/$kid/new-chart'
+    | '/api/stars/awards/$id'
   id:
     | '__root__'
     | '/'
     | '/$slug'
+    | '/admin'
     | '/healthz'
     | '/api/calendar'
     | '/api/photos'
     | '/api/weather'
+    | '/photos/$'
+    | '/api/stars/'
+    | '/api/stars/$kid/award'
+    | '/api/stars/$kid/new-chart'
+    | '/api/stars/awards/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SlugRoute: typeof SlugRoute
+  AdminRoute: typeof AdminRoute
   HealthzRoute: typeof HealthzRoute
   ApiCalendarRoute: typeof ApiCalendarRoute
   ApiPhotosRoute: typeof ApiPhotosRoute
   ApiWeatherRoute: typeof ApiWeatherRoute
+  PhotosSplatRoute: typeof PhotosSplatRoute
+  ApiStarsIndexRoute: typeof ApiStarsIndexRoute
+  ApiStarsKidAwardRoute: typeof ApiStarsKidAwardRoute
+  ApiStarsKidNewChartRoute: typeof ApiStarsKidNewChartRoute
+  ApiStarsAwardsIdRoute: typeof ApiStarsAwardsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -122,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/$slug'
       fullPath: '/$slug'
       preLoaderRoute: typeof SlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/healthz': {
@@ -152,26 +237,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWeatherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/photos/$': {
+      id: '/photos/$'
+      path: '/photos/$'
+      fullPath: '/photos/$'
+      preLoaderRoute: typeof PhotosSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stars/': {
+      id: '/api/stars/'
+      path: '/api/stars'
+      fullPath: '/api/stars/'
+      preLoaderRoute: typeof ApiStarsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stars/$kid/award': {
+      id: '/api/stars/$kid/award'
+      path: '/api/stars/$kid/award'
+      fullPath: '/api/stars/$kid/award'
+      preLoaderRoute: typeof ApiStarsKidAwardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stars/$kid/new-chart': {
+      id: '/api/stars/$kid/new-chart'
+      path: '/api/stars/$kid/new-chart'
+      fullPath: '/api/stars/$kid/new-chart'
+      preLoaderRoute: typeof ApiStarsKidNewChartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/stars/awards/$id': {
+      id: '/api/stars/awards/$id'
+      path: '/api/stars/awards/$id'
+      fullPath: '/api/stars/awards/$id'
+      preLoaderRoute: typeof ApiStarsAwardsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SlugRoute: SlugRoute,
+  AdminRoute: AdminRoute,
   HealthzRoute: HealthzRoute,
   ApiCalendarRoute: ApiCalendarRoute,
   ApiPhotosRoute: ApiPhotosRoute,
   ApiWeatherRoute: ApiWeatherRoute,
+  PhotosSplatRoute: PhotosSplatRoute,
+  ApiStarsIndexRoute: ApiStarsIndexRoute,
+  ApiStarsKidAwardRoute: ApiStarsKidAwardRoute,
+  ApiStarsKidNewChartRoute: ApiStarsKidNewChartRoute,
+  ApiStarsAwardsIdRoute: ApiStarsAwardsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

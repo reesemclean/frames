@@ -1,1 +1,49 @@
-/* slideshow styles */
+/* Slideshow. Only opacity animates; the soft fill behind portraits is a
+   server-made image, never a CSS blur. Fills its nearest positioned
+   ancestor. */
+.ss { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: #1a1917; color: #ffffff; }
+
+.ss-empty { position: absolute; top: 0; right: 0; bottom: 0; left: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #3b3934, #1a1917); }
+.ss-empty-msg { font-size: 18px; color: rgba(255, 255, 255, .55); padding: 0 24px; text-align: center; }
+
+/* 900ms: FADE_MS in Slideshow.tsx. An animation rather than a transition, so
+   a freshly mounted slide fades without a forced reflow. */
+.ss-slide { position: absolute; top: 0; right: 0; bottom: 0; left: 0; overflow: hidden; background: #1a1917; animation: ss-in 900ms ease both; }
+@keyframes ss-in { from { opacity: 0; } to { opacity: 1; } }
+.ss-slide img { -webkit-user-drag: none; }
+
+.ss-cover { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; }
+.ss-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.ss-contain { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; }
+
+.ss-pair { display: flex; background: #000000; }
+.ss-pair .ss-pane { flex: 1; margin-left: 4px; }
+.ss-pair .ss-pane--a { margin-left: 0; }
+.ss-collage { display: grid; grid-template-columns: 3fr 2fr; grid-template-rows: 1fr 1fr; grid-gap: 4px; gap: 4px; background: #000000; }
+.ss-pane { position: relative; overflow: hidden; min-width: 0; min-height: 0; }
+.ss-collage .ss-pane--a { grid-row: 1 / 3; }
+
+.ss-polaroid { background: linear-gradient(135deg, #3b3934, #1a1917); }
+.ss-pol {
+  position: absolute; left: 50%; top: 50%;
+  background: #fbf9f4; border-radius: 3px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+}
+.ss-pol img { display: block; object-fit: cover; background: #d6cfc0; }
+.ss-pol figcaption {
+  display: flex; align-items: center; padding: 0 4px;
+  font-family: var(--serif); font-style: italic; color: #3b3934;
+  white-space: nowrap; overflow: hidden;
+}
+
+/* Small date + contributor, bottom-left, over a short shade. */
+.ss-full::after, .ss-fit::after, .ss-pane::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 22%;
+  background: linear-gradient(0deg, rgba(0, 0, 0, .45), rgba(0, 0, 0, 0)); pointer-events: none;
+}
+.ss-cap {
+  position: absolute; left: 1.4em; bottom: 1em; right: 1.4em; z-index: 1;
+  font-weight: 600; letter-spacing: .01em; color: rgba(255, 255, 255, .88);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}

@@ -23,10 +23,14 @@ export class Source<T> {
   private running = false
   private again = false
   private stopped = true
+  // Aborted by stop(), so an in-flight refresh (a photo backlog, say) winds
+  // down at shutdown instead of working on until Docker's SIGKILL.
+  private abort = new AbortController()
+  private inflight: Promise<boolean> | null = null
 
   constructor(
     readonly name: string,
-    readonly fetch: () => Promise<T>,
+    readonly fetch: (signal: AbortSignal) => Promise<T>,
     readonly intervalMs: number,
   ) {}
 
@@ -65,14 +69,22 @@ export class Source<T> {
     }
   }
 
-  async refresh(): Promise<boolean> {
+  refresh(): Promise<boolean> {
+    const run = this.attempt(this.abort.signal)
+    this.inflight = run
+    void run.finally(() => { if (this.inflight === run) this.inflight = null })
+    return run
+  }
+
+  private async attempt(signal: AbortSignal): Promise<boolean> {
     try {
-      this.data = await this.fetch()
+      this.data = await this.fetch(signal)
       this.updated = Date.now()
       this.error = null
       this.save()
       return true
     } catch (e: any) {
+      if (signal.aborted) return false // shutting down, not a failure worth reporting
       this.error = `${e?.name || 'Error'}: ${e?.message || e}`.slice(0, 300)
       console.warn(`[cache] source ${this.name} failed: ${this.error}`)
       return false
@@ -85,6 +97,7 @@ export class Source<T> {
     if (this.running) { this.again = true; return }
     if (this.timer) clearTimeout(this.timer)
     this.timer = setTimeout(() => this.loop(), 0)
+    this.timer.unref?.()
   }
 
   private backoff = RETRY_MIN
@@ -101,18 +114,36 @@ export class Source<T> {
     else { wait = this.backoff; this.backoff = Math.min(this.backoff * 2, RETRY_MAX) }
     if (this.again) wait = 0
     this.timer = setTimeout(() => this.loop(), wait)
+    // Never what keeps the process alive: the HTTP server does that, and a
+    // pending refresh mustn't turn SIGTERM into a 10 s wait and a SIGKILL.
+    this.timer.unref?.()
   }
 
   start(): void {
     if (!this.stopped) return
     this.stopped = false
+    if (this.abort.signal.aborted) this.abort = new AbortController()
     this.timer = setTimeout(() => this.loop(), 0)
+    this.timer.unref?.()
   }
 
   stop(): void {
     this.stopped = true
     if (this.timer) clearTimeout(this.timer)
     this.timer = null
+    this.abort.abort()
+  }
+
+  /** Resolves once no refresh is running, or after `ms`, whichever is first. */
+  async settle(ms: number): Promise<void> {
+    if (!this.inflight) return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    await Promise.race([
+      this.inflight,
+      // Not unref'd: the close hook awaits this, and closeDb() must still run.
+      new Promise<void>((r) => { timer = setTimeout(r, ms) }),
+    ])
+    clearTimeout(timer)
   }
 }
 
@@ -133,6 +164,10 @@ class Registry {
 
   start(): void { for (const s of this.sources.values()) s.start() }
   stop(): void { for (const s of this.sources.values()) s.stop() }
+  /** After stop(): give in-flight refreshes up to `ms` to wind down. */
+  async settle(ms: number): Promise<void> {
+    await Promise.all([...this.sources.values()].map((s) => s.settle(ms)))
+  }
 }
 
 // One registry per process, kept on globalThis so dev-server module reloads

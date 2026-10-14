@@ -60,11 +60,14 @@ export type DB = BetterSQLite3Database<typeof schema> & { $client: Database.Data
 
 // On globalThis: Nitro bundles the startup plugin apart from the routes, so
 // this module can be loaded twice; both copies must share one connection.
-const g = globalThis as unknown as { __framesDb?: DB | null }
+const g = globalThis as unknown as { __framesDb?: DB | null; __framesDbShut?: boolean }
 
 export function db(): DB {
   let current = g.__framesDb
   if (!current) {
+    // A refresh still running at shutdown must fail, not quietly reopen the
+    // file the close hook just closed.
+    if (g.__framesDbShut) throw new Error('database is shut down')
     fs.mkdirSync(settings.dataDir, { recursive: true })
     const sqlite = new Database(path.join(settings.dataDir, 'frames.db'))
     sqlite.pragma('journal_mode = WAL')
@@ -92,8 +95,16 @@ export function tx<T>(fn: (d: DB) => T): T {
   return d.$client.transaction(() => fn(d)).immediate()
 }
 
-/** Tests: drop the connection so the next db() opens settings.dataDir afresh. */
+/** Close the connection for good (process shutdown); db() throws after this. */
+export function closeDb(): void {
+  g.__framesDbShut = true
+  g.__framesDb?.$client.close()
+  g.__framesDb = null
+}
+
+/** Close the connection; the next db() opens settings.dataDir afresh. */
 export function closeForTests(): void {
+  g.__framesDbShut = false
   g.__framesDb?.$client.close()
   g.__framesDb = null
 }

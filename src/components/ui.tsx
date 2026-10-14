@@ -92,15 +92,49 @@ export function UIProvider({ children }: { children: ReactNode }) {
 }
 
 // ------------------------------------------------------------------ hold
+// Which pointers are down anywhere on the page, shared by every useHold: one
+// hand on each kid's panel must not be two holds. On window, capture phase,
+// so it sees every contact before React does, including the ones Modes
+// swallows (it stops propagation there, which leaves other window listeners
+// running).
+const pointersDown = new Set<number>()
+const activeHolds = new Set<() => void>()
+
+/** A pointer went down; false when another is already down (cancels every active hold). */
+export function pointerDown(id: number, isPrimary: boolean): boolean {
+  // A primary touch means no other touch is down, so this also drops any id
+  // whose pointerup never arrived.
+  if (isPrimary) pointersDown.clear()
+  pointersDown.add(id)
+  if (pointersDown.size === 1) return true
+  activeHolds.forEach((stop) => stop())
+  return false
+}
+export function pointerUp(id: number): void { pointersDown.delete(id) }
+/** True when `id` is the only pointer down: a hold may arm, or complete. */
+export function onlyPointer(id: number): boolean { return pointersDown.size === 1 && pointersDown.has(id) }
+
+let tracking = false
+function trackPointers() {
+  if (tracking) return
+  tracking = true
+  const opts = { capture: true, passive: true }
+  window.addEventListener('pointerdown', (e) => { pointerDown(e.pointerId, e.isPrimary) }, opts)
+  window.addEventListener('pointerup', (e) => pointerUp(e.pointerId), opts)
+  window.addEventListener('pointercancel', (e) => pointerUp(e.pointerId), opts)
+}
+
 /**
  * Press and hold for `ms` to fire done(); a quick tap does nothing (calls
  * tap() if given). Spread the returned props onto the element and give it
  * the `holdable` class for the filling ring (base.css).
  *
- * One tracked finger: a second finger while holding cancels the gesture, so
- * a two-finger tap or hold can't award twice. Android WebView cancels a long
- * touch with pointercancel unless the element opts out of panning, text
- * selection and the long-press callout, so the style sets all three.
+ * One finger on the whole page: a hold arms only when no other pointer is
+ * down, and a second finger anywhere cancels every hold, so a two-finger tap
+ * or hold (on one panel or across two) can't award at all. Android WebView
+ * cancels a long touch with pointercancel unless the element opts out of
+ * panning, text selection and the long-press callout, so the style sets all
+ * three.
  */
 export function useHold(ms: number, cb: { done: () => void; tap?: () => void; enabled?: () => boolean }) {
   const cbRef = useRef(cb)
@@ -109,13 +143,22 @@ export function useHold(ms: number, cb: { done: () => void; tap?: () => void; en
   const id = useRef<number | null>(null)
   const [holding, setHolding] = useState(false)
 
+  // `kill` is this hook's one entry in activeHolds: stable across renders,
+  // so stop() always removes what onPointerDown added.
+  const stopRef = useRef<() => void>(() => {})
+  const [kill] = useState(() => () => stopRef.current())
   const stop = () => {
     if (t.current) clearTimeout(t.current)
     t.current = null
     id.current = null
+    activeHolds.delete(kill)
     setHolding(false)
   }
-  useEffect(() => () => { if (t.current) clearTimeout(t.current) }, [])
+  stopRef.current = stop
+  useEffect(() => {
+    trackPointers()
+    return () => { if (t.current) clearTimeout(t.current); activeHolds.delete(kill) }
+  }, [kill])
 
   const cancel = (e: React.PointerEvent) => {
     if (!t.current || e.pointerId !== id.current) return
@@ -138,11 +181,15 @@ export function useHold(ms: number, cb: { done: () => void; tap?: () => void; en
         if (t.current) { stop(); return }
         const c = cbRef.current
         if (e.button !== 0 || (c.enabled && !c.enabled())) return
-        id.current = e.pointerId
-        try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* fine */ }
+        // The window tracker ran first, so this pointer is already counted.
+        if (!onlyPointer(e.pointerId)) return
+        const pid = e.pointerId
+        id.current = pid
+        try { e.currentTarget.setPointerCapture(pid) } catch { /* fine */ }
         setHolding(true)
+        activeHolds.add(kill)
         t.current = setTimeout(() => {
-          const ok = !cbRef.current.enabled || cbRef.current.enabled()
+          const ok = onlyPointer(pid) && (!cbRef.current.enabled || cbRef.current.enabled())
           stop()
           if (ok) cbRef.current.done()
         }, ms)

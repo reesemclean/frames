@@ -14,5 +14,11 @@ export default defineConfig({
     // first request: a frame may be the first thing to ask, hours later.
     plugins: ['./src/nitro/startup.ts'],
   },
-  plugins: [tanstackStart(), nitro(), viteReact()],
+  plugins: [
+    // src/start.ts's same-origin middleware replaces Start's own server-function
+    // CSRF guard (and covers every write, not only server functions).
+    tanstackStart({ serverFns: { disableCsrfMiddlewareWarning: true } }),
+    nitro(),
+    viteReact(),
+  ],
 })
