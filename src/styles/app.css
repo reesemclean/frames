@@ -1,0 +1,13 @@
+/* Everything the frame loads, in one stylesheet linked from the root route.
+   Target: Android WebView 106 — see tokens.css and scripts/check-dist.mjs. */
+@import '@fontsource-variable/archivo/index.css';
+@import '@fontsource/instrument-serif/index.css';
+@import './tokens.css';
+@import './base.css';
+@import './modes.css';
+@import '../widgets/clock.css';
+@import '../widgets/weather.css';
+@import '../widgets/calendar.css';
+@import '../widgets/photos.css';
+@import '../widgets/slideshow.css';
+@import '../widgets/stars.css';

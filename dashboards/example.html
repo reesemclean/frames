@@ -1,0 +1,37 @@
+<!--
+  A dashboard is this file: options, layout, and widgets. The service wraps it
+  in the app shell and serves it at /<filename-without-.html>.
+  Widgets: clock, weather, calendar, stars, photos. Each data-* attribute is
+  an option for that widget.
+-->
+<script type="application/json" id="dashboard-options">
+{
+  "night": { "from": "21:30", "to": "06:00" },
+  "photos": {
+    "windows": [{ "days": [0, 1, 2, 3, 4, 5, 6], "from": "09:00", "to": "16:00" }],
+    "idleSec": 120,
+    "layout": "auto",
+    "intervalSec": 15
+  }
+}
+</script>
+<style>
+  .dash {
+    height: 100%;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 220px 1fr 1fr;
+    grid-template-areas:
+      "clock   weather weather"
+      "cal     photos  photos"
+      "cal     stars   stars";
+  }
+</style>
+<div class="dash">
+  <section data-widget="clock" style="grid-area: clock"></section>
+  <section data-widget="weather" data-show="current,hourly" style="grid-area: weather"></section>
+  <section data-widget="calendar" data-days="1" style="grid-area: cal"></section>
+  <section data-widget="photos" style="grid-area: photos"></section>
+  <section data-widget="stars" style="grid-area: stars"></section>
+</div>

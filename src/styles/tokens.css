@@ -1,0 +1,33 @@
+/* Target: Android WebView 106. No nesting, color-mix(), oklch(), dvh, :has(),
+   or 4/8-digit hex (use rgba()). scripts/check-dist.mjs enforces this. */
+:root {
+  --paper: #f2eee6;
+  --paper-2: #e8e2d5;
+  --card: #fbf9f4;
+  --ink: #111111;
+  --ink-2: #3b3934;
+  --mute: #7a756b;
+  --line: #d6cfc0;
+
+  --alert: #e5261e;
+  --amber: #ff9500;
+  --ok: #00a36c;
+  --warm: #ffc45c;
+  --night: #c22c1c;
+
+  --sans: 'Archivo Variable', 'Roboto', system-ui, sans-serif;
+  --serif: 'Instrument Serif', Georgia, serif;
+  --fs-hero: 76px;
+  --fs-xl: 56px;
+  --fs-l: 34px;
+  --fs-m: 24px;
+  --fs-body: 20px;
+  --fs-label: 15px;
+
+  --r: 18px;
+  --r-s: 12px;
+  --gap: 16px;
+  --pad: 24px;
+  --tap: 64px;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
