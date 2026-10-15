@@ -20,6 +20,7 @@ import type { WidgetProps } from '.'
 import type { Envelope, Kid, Stars } from '~/lib/types'
 import { send, staleNote, usePoll, type SendError } from '~/lib/api'
 import { useHold, useUI } from '~/components/ui'
+import { celebrate } from './confetti'
 
 const PATH = '/api/stars'
 const POLL_MS = 20_000
@@ -83,21 +84,22 @@ export function StarsWidget(_: WidgetProps) {
   }
   const shapeKey = shape.current.n + ':' + shape.current.maxT
 
-  // Side by side or stacked: whichever gives each star more room. Star size
-  // itself is CSS (each slot shares the row; the SVG fits it).
+  // Side by side or stacked bands: whichever gives each star more room. Star
+  // size itself is CSS (each slot shares the row; the SVG fits it).
   const fit = useCallback(() => {
     const el = box.current
     if (!el) return
     const W = el.clientWidth, H = el.clientHeight
     const { n, maxT } = shape.current
     if (!W || !H || !n) return // hidden (photos/night mode): keep the last layout
-    const chrome = 110 // name/goal above, count/button below
-    const side = Math.min(W / n / maxT, H - chrome)
-    const stack = Math.min(W / maxT, H / n - chrome)
+    // Name/goal above, count/button below; stacked, each kid is a band with
+    // the count beside the name, so less of it.
+    const side = Math.min(W / n / maxT, H - 110)
+    const stack = Math.min(W / maxT, H / n - 70)
     const row = n === 1 || side >= stack
     const ph = row ? H : H / n
-    const name = Math.round(Math.max(22, Math.min(44, ph * 0.12)))
-    const goal = Math.round(Math.max(18, Math.min(32, ph * 0.09)))
+    const name = Math.round(row ? Math.max(22, Math.min(44, ph * 0.12)) : Math.max(24, Math.min(40, ph * 0.24)))
+    const goal = Math.round(row ? Math.max(18, Math.min(32, ph * 0.09)) : Math.max(18, Math.min(28, ph * 0.17)))
     setLayout((l) => (l.row === row && l.name === name && l.goal === goal ? l : { row, name, goal }))
   }, [])
 
@@ -203,6 +205,10 @@ const KidPanel = memo(function KidPanel({ kid, actions }: { kid: Kid; actions: A
     const now = res.kids.filter((k) => k.id === kid.id)[0]
     const nc = now && now.chart
     const awardId = res.award.id
+    // Confetti only here, on the frame the star was given at, and only live:
+    // a reload, another frame, or /admin stay quiet. A star gets a little; the
+    // last one gets the party.
+    if (nc) celebrate(document.getElementById('stage'), nc.done ? 'goal' : 'star', { name, color: kid.color, goal: nc.goal, target: nc.target })
     actions.toast(
       nc && nc.done
         ? <><b>{name}</b> did it! · {nc.target} of {nc.target}</>
@@ -279,7 +285,8 @@ const KidPanel = memo(function KidPanel({ kid, actions }: { kid: Kid; actions: A
       </div>
       <div className="st-donehead">
         <div className="st-yay serif">{name} did it!</div>
-        <div className="st-sub">{c.target}/{c.target} · {c.goal}</div>
+        {/* Stacked, the button is just an icon: its hint shows here instead. */}
+        <div className={'st-sub' + (hint ? ' is-hint' : '')}>{hint ? 'Hold the button for a new chart' : c.target + '/' + c.target + ' · ' + c.goal}</div>
       </div>
       <div className="st-row">{slots}</div>
       <div className="st-foot">
@@ -288,8 +295,9 @@ const KidPanel = memo(function KidPanel({ kid, actions }: { kid: Kid; actions: A
         <span className="st-bar" />
       </div>
       <div className="st-donefoot">
-        <button className={'st-new' + (newHold.holding ? ' is-holding' : '')} type="button" {...btnProps}>
-          <span>{hint && c.done ? 'Press and hold for a second' : 'Hold to start a new chart'}</span>
+        <button aria-label="Hold to start a new chart" className={'st-new' + (newHold.holding ? ' is-holding' : '')} type="button" {...btnProps}>
+          <span className="st-new-l">{hint && c.done ? 'Press and hold for a second' : 'Hold to start a new chart'}</span>
+          <svg className="st-new-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5" /></svg>
         </button>
       </div>
     </div>

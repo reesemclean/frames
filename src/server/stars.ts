@@ -233,6 +233,35 @@ export function newChart(kidId: string, goal?: unknown, target?: unknown, fromCh
   })
 }
 
+/** Admin: set the current chart's count (a star given by mistake, or one
+ * that was missed). Removes the newest stars (marked undone, so they stay
+ * in the record) or adds stars now; done follows the count either way.
+ * Returns the kid's name. */
+export function setCount(kidId: string, value: unknown): string {
+  return tx((d) => {
+    const kid = getKid(d, kidId, false)
+    const chart = currentChart(d, kidId)
+    if (!chart) throw new StarsError(409, 'no chart to change')
+    const n = typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value) : NaN
+    if (!Number.isInteger(n) || n < 0 || n > chart.target) {
+      throw new StarsError(400, 'stars must be a whole number from 0 to ' + chart.target)
+    }
+    const live = liveAwards(d, chart.id)
+    const now = clock.now()
+    for (let i = live.length - 1; i >= n; i--) {
+      d.update(awards).set({ undoneAt: now }).where(eq(awards.id, live[i].id)).run()
+    }
+    for (let i = live.length; i < n; i++) {
+      d.insert(awards).values({ id: randomBytes(16).toString('hex'), chartId: chart.id, at: now }).run()
+    }
+    const done = n >= chart.target
+    if (done !== (chart.completedAt != null)) {
+      d.update(charts).set({ completedAt: done ? now : null }).where(eq(charts.id, chart.id)).run()
+    }
+    return kid.name
+  })
+}
+
 /** Admin: rename / recolour (hidden kids too). Returns the clean name. */
 export function editKid(kidId: string, name: unknown, color: unknown): string {
   const n = cleanName(name)
@@ -431,6 +460,10 @@ export async function handleAdminPost(request: Request): Promise<Response> {
         const target = cleanTarget(field('target') || DEFAULT_TARGET)
         tx((d) => addKid(d, name, color, goal, target))
         return back({ ok: `Added ${name}.` })
+      }
+      case 'count': {
+        const name = setCount(kid, field('count'))
+        return back({ ok: `${name} has ${field('count')!.trim()} star${field('count')!.trim() === '1' ? '' : 's'}.` })
       }
       case 'edit':
         return back({ ok: `Saved ${editKid(kid, field('name'), field('color'))}.` })

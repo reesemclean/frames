@@ -2,5 +2,11 @@
 .w--photos { position: relative; }
 .ph {
   position: absolute; top: 0; right: 0; bottom: 0; left: 0;
-  border-radius: var(--r); overflow: hidden; background: #1a1917;
+  border-radius: var(--r); overflow: hidden; background: #16191c;
 }
+/* Press and hold: a bar fills along the bottom, then the slideshow opens. */
+.ph-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 6px; z-index: 5; pointer-events: none;
+  background: rgba(255, 255, 255, .85); transform: scaleX(0); transform-origin: 0 50%;
+}
+.ph.is-holding .ph-bar { transform: scaleX(1); transition: transform var(--hold, 2000ms) linear; }

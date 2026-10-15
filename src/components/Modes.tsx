@@ -1,7 +1,8 @@
 // What the screen is doing when nobody's touching it.
-//   day        the dashboard
-//   photos     full-screen slideshow + clock/weather/next-event strip
-//              (after photos.idleSec idle inside a photos window)
+//   day        the dashboard: after a tap (until photos.idleSec idle), and
+//              for photos.dashboardForSec every photos.dashboardEverySec
+//   photos     full-screen slideshow + clock/weather/next-event strip, the
+//              home screen outside night hours (while there are photos)
 //   night      black screen, dim red clock (after idleSec idle in night hours)
 //   nightdash  the dashboard under a dark layer, after a tap at night;
 //              back to night after 20 s idle
@@ -9,11 +10,11 @@
 // on a mode change and on the minute (the two small info strips); the
 // per-second check is arithmetic on refs, no DOM work.
 import { memo, useEffect, useRef, useState } from 'react'
-import type { Calendar, CalendarEvent, DashboardOptions, Weather } from '~/lib/types'
+import type { Calendar, CalendarEvent, DashboardOptions, Photos, Weather } from '~/lib/types'
 import * as time from '~/lib/time'
 import { useMinute, onMinute, stampMinute } from '~/lib/clock'
 import { usePoll, staleNote, type PollState } from '~/lib/api'
-import { backdateTouch, idleSec, setMode as storeMode, touched, type Mode } from '~/lib/mode'
+import { backdateTouch, idleSec, onRequestMode, setMode as storeMode, touched, type Mode } from '~/lib/mode'
 import { Slideshow } from '~/widgets/Slideshow'
 import { WxIcon } from '~/widgets/icons'
 import { useUI } from './ui'
@@ -52,6 +53,8 @@ export function Modes({ options }: { options: DashboardOptions }) {
   closeRef.current = closeSheet
   // Set by the effect; the overlays' pointerdown calls it.
   const exitRef = useRef<(from: Mode, to: Mode, e: React.PointerEvent) => void>(() => {})
+  // Unknown until the first answer: assume there are photos.
+  const hasPhotos = useRef(true)
 
   useEffect(() => {
     const stage = document.getElementById('stage')!
@@ -59,12 +62,14 @@ export function Modes({ options }: { options: DashboardOptions }) {
     let parts = time.parts()
     let forced = false // ?mode= or a key: hold the mode until a touch
     let swallowUntil = 0
+    let enteredAt = Date.now()
 
     function go(m: Mode) {
       stage.setAttribute('data-mode', m)
       storeMode(m)
       if (m === modeRef.current) return
       modeRef.current = m
+      enteredAt = Date.now()
       if (m === 'photos' || m === 'night') closeRef.current()
       if (m === 'photos') setEverPhotos(true)
       setModeState(m)
@@ -96,13 +101,20 @@ export function Modes({ options }: { options: DashboardOptions }) {
       go(to)
     }
 
+    // A widget's request: only the slideshow, and only with photos to show.
+    const offRequest = onRequestMode((m) => {
+      if (m !== 'photos' || !hasPhotos.current || modeRef.current !== 'day') return
+      forced = false
+      go(m)
+    })
+
     // Any touch ends a forced preview (Frame records the touch time itself).
     const onTouch = () => { forced = false }
     document.addEventListener('pointerdown', onTouch, true)
 
     const check = () => {
       if (forced) return
-      const m = nextMode(modeRef.current, options, parts, idleSec())
+      const m = nextMode(modeRef.current, options, parts, idleSec(), (Date.now() - enteredAt) / 1000, hasPhotos.current)
       if (m !== modeRef.current) go(m)
     }
     const tick = setInterval(check, 1000)
@@ -126,7 +138,7 @@ export function Modes({ options }: { options: DashboardOptions }) {
       const m = KEYS[e.key]
       const tag = (e.target as HTMLElement | null)?.tagName || ''
       if (!m || e.ctrlKey || e.metaKey || e.altKey || /INPUT|TEXTAREA|SELECT/.test(tag)) return
-      forced = m !== 'day'
+      forced = true
       touched()
       go(m)
     }
@@ -138,19 +150,20 @@ export function Modes({ options }: { options: DashboardOptions }) {
       parts = time.parts()
       const q = forcedMode(location.search)
       if (q) {
-        forced = q !== 'day'
+        forced = true
         go(q)
       } else {
         // Boot counts as idle: no bright idleSec of dashboard after the
         // nightly reload; straight to what the rules want.
         backdateTouch(options.photos.idleSec)
-        go(bootMode(options, parts))
+        go(bootMode(options, parts, hasPhotos.current))
       }
     }, 0)
 
     return () => {
       clearTimeout(bootTimer)
       clearInterval(tick)
+      offRequest()
       offMinute()
       SWALLOW.forEach((t) => window.removeEventListener(t, swallow, OPTS))
       document.removeEventListener('pointerdown', onTouch, true)
@@ -162,6 +175,7 @@ export function Modes({ options }: { options: DashboardOptions }) {
   const on = (m: Mode) => (mode === m ? ' is-on' : '')
   return (
     <div className="modes" id="modes" data-boot={boot}>
+      <PhotosProbe has={hasPhotos} />
       <div className={'nightdim' + on('nightdash')} aria-hidden="true" />
       <div className={'takeover' + on('photos')} onPointerDown={(e) => exitRef.current('photos', 'day', e)}>
         <div className="tk-stage">
@@ -186,6 +200,15 @@ export function Modes({ options }: { options: DashboardOptions }) {
 }
 
 // ------------------------------------------------------------------ data
+
+/** Keeps `has` current: with no photos (a new album, local dev) the
+ * dashboard stays up instead of a blank slideshow. Its own component, so
+ * the poll's re-renders stay out of <Modes>. Shares the slideshow's query. */
+function PhotosProbe({ has }: { has: React.MutableRefObject<boolean> }) {
+  const photos = usePoll<Photos>('/api/photos', 10 * 60_000)
+  if (photos.data) has.current = photos.data.photos.length > 0
+  return null
+}
 
 function useSources() {
   const weather = usePoll<Weather>('/api/weather', 10 * 60_000)

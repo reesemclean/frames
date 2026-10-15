@@ -1,13 +1,13 @@
 /* Target: Android WebView 106. No nesting, color-mix(), oklch(), dvh, :has(),
    or 4/8-digit hex (use rgba()). scripts/check-dist.mjs enforces this. */
 :root {
-  --paper: #f2eee6;
-  --paper-2: #e8e2d5;
-  --card: #fbf9f4;
+  --paper: #e9edf1;
+  --paper-2: #dde3e9;
+  --card: #ffffff;
   --ink: #111111;
-  --ink-2: #3b3934;
-  --mute: #7a756b;
-  --line: #d6cfc0;
+  --ink-2: #353b42;
+  --mute: #6b7480;
+  --line: #c9d1d9;
 
   --alert: #e5261e;
   --amber: #ff9500;

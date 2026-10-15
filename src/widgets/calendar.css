@@ -52,3 +52,26 @@
 
 .cal-free { font-size: 26px; font-style: italic; color: var(--mute); padding: 4px 0; }
 .cal-free--later { font-size: 20px; }
+
+/* Full-screen week (CalendarWeek): seven columns, nothing scrolls. */
+.calw { display: flex; gap: 12px; }
+.calw-stale { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.calw-day { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 12px; }
+.calw-day.is-today { border-width: 3px; }
+.calw-dh { flex: none; display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.calw-d { font-size: 34px; line-height: 1; }
+.calw-day.is-today .calw-d { color: var(--alert); }
+.calw-evs { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; }
+.calw-ev {
+  flex: none; display: flex; flex-direction: column; gap: 2px;
+  padding: 7px 8px 7px 10px; border-left: 5px solid var(--c); border-radius: 6px; background: var(--ct);
+}
+.calw-ev b {
+  font-size: 17px; font-weight: 700; line-height: 1.2;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.calw-ev small { font-size: 14px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.calw-ev.is-past { opacity: .42; }
+.calw-free { font-size: 20px; font-style: italic; color: var(--mute); }
+.calw-more { flex: none; font-size: 15px; font-weight: 700; color: var(--mute); }
+.calw-more:empty { display: none; }

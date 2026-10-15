@@ -60,6 +60,15 @@ ul { margin: 0; padding: 0; list-style: none; }
 .sheet-layer.is-open { display: flex; }
 .sheet-scrim { position: absolute; top: 0; right: 0; bottom: 0; left: 0; background: rgba(17, 17, 17, .55); }
 .sheet { position: relative; background: var(--card); border: 2px solid var(--ink); border-radius: var(--r); padding: 32px; min-width: 520px; max-width: 1100px; max-height: 720px; overflow: hidden; }
+/* Full: a widget's detail view over the whole stage, a title and a body. */
+.sheet.is-full {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; min-width: 0; max-width: none; max-height: none;
+  border: 0; border-radius: 0; padding: var(--pad); background: var(--paper);
+  display: flex; flex-direction: column; gap: 14px;
+}
+.full-title { flex: none; display: flex; align-items: center; height: 40px; font-size: 20px; color: var(--ink); }
+.full-body { flex: 1; min-height: 0; position: relative; }
+.full-body.is-fill > .card { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
 .sheet-x { position: absolute; top: 10px; right: 14px; width: var(--tap); height: var(--tap); font-size: 40px; line-height: 1; text-align: center; }
 
 /* Press-and-hold ring: any element with .holdable gets a filling ring while held. */
@@ -69,3 +78,40 @@ ul { margin: 0; padding: 0; list-style: none; }
   border: 6px solid var(--ok); opacity: 0; transform: scale(.6);
 }
 .holdable.is-holding::after { opacity: 1; transform: scale(1); transition: transform var(--hold, 1000ms) linear, opacity .1s; }
+
+/* The plain pages: the dashboard list at / and the "couldn't load" retry
+   page. A phone or laptop reads these, not the frame; they scroll. */
+.index-page {
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; overflow: auto;
+  background: var(--paper); color: var(--ink); padding: 40px 24px;
+  -webkit-user-select: text; user-select: text;
+}
+.index-page > * { max-width: 1240px; margin-left: auto; margin-right: auto; }
+.index-inner > * { margin-left: 0; margin-right: 0; }
+.index-page h1 { font-size: 34px; font-weight: 800; margin-bottom: 24px; }
+.index-page p { margin-bottom: 16px; color: var(--ink-2); }
+.index-page a { color: var(--ink); font-weight: 700; }
+
+/* Dashboard cards: a fixed 400x250 thumbnail (the 1280x800 page at 5/16). */
+.dash-list { display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 32px; }
+.dash-card {
+  display: block; width: 404px; text-decoration: none; overflow: hidden;
+  background: var(--card); border: 2px solid var(--ink); border-radius: var(--r);
+}
+.dash-thumb { display: block; position: relative; width: 400px; height: 250px; overflow: hidden; background: var(--paper); border-bottom: 2px solid var(--ink); }
+.dash-thumb iframe {
+  position: absolute; top: 0; left: 0; width: 1280px; height: 800px; border: 0;
+  transform: scale(.3125); transform-origin: 0 0; pointer-events: none;
+}
+.dash-name { display: flex; align-items: baseline; justify-content: space-between; padding: 14px 18px; font-size: 22px; font-weight: 800; text-transform: capitalize; }
+.dash-name small { font-size: 15px; font-weight: 600; color: var(--mute); text-transform: none; }
+.index-admin {
+  display: flex; flex-direction: column; gap: 2px; width: 404px; max-width: 100%; padding: 16px 18px;
+  background: var(--card); border: 2px solid var(--ink); border-radius: var(--r-s); text-decoration: none; font-size: 20px;
+}
+.index-admin span { font-size: 15px; font-weight: 500; color: var(--mute); }
+@media (max-width: 460px) {
+  .dash-card { width: 324px; }
+  .dash-thumb { width: 320px; height: 200px; }
+  .dash-thumb iframe { transform: scale(.25); }
+}

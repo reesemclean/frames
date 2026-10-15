@@ -310,6 +310,22 @@ describe('/admin', () => {
     expect(bo.chart).toMatchObject({ goal: '"Eat" & <veg>', target: 4 })
   })
 
+  it('fixes the star count: down undoes the newest, up adds, done follows', async () => {
+    await award('alex'); t += 1000; await award('alex'); t += 1000; await award('alex')
+    let r = await admin({ op: 'count', kid: 'alex', count: '1' })
+    expect(location(r).startsWith('/admin?ok=')).toBe(true)
+    expect((await getKids()).alex.chart).toMatchObject({ count: 1, done: false })
+    await admin({ op: 'count', kid: 'alex', count: '5' })
+    expect((await getKids()).alex.chart).toMatchObject({ count: 5, done: true })
+    await admin({ op: 'count', kid: 'alex', count: '4' })
+    expect((await getKids()).alex.chart).toMatchObject({ count: 4, done: false })
+    for (const bad of ['6', '-1', '2.5', 'x', '']) {
+      r = await admin({ op: 'count', kid: 'alex', count: bad })
+      expect(location(r).startsWith('/admin?error=')).toBe(true)
+    }
+    expect((await getKids()).alex.chart).toMatchObject({ count: 4 })
+  })
+
   it('dedupes ids, and never hands out the reserved "awards" id', async () => {
     await admin({ op: 'add', name: 'Alex', color: '#111111', goal: 'g', target: '5' })
     await admin({ op: 'add', name: 'Awards', color: '#111111', goal: 'g', target: '5' })

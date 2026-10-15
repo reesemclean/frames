@@ -4,6 +4,9 @@
 // side by side; a taller one stacks them. Parts that don't fit are dropped
 // from the end of data-show rather than squeezed.
 //
+// A tap opens the full-screen view: the same widget at the size of the
+// stage, with every part.
+//
 // Hydration: the server can't know the cell's size and has no data (the poll
 // runs in the browser), so the server render and the first client render are
 // both the same calm placeholder. The real layout follows once the cell is
@@ -16,6 +19,7 @@ import { onMinute } from '~/lib/clock'
 import * as time from '~/lib/time'
 import type { Weather as WeatherData } from '~/lib/types'
 import { WxIcon } from './icons'
+import { useUI } from '~/components/ui'
 
 const WET = 50 // % at which an hour/day reads as "wet" (blue icon)
 const SHOW_POP = 20
@@ -89,6 +93,8 @@ export function Weather({ opts }: WidgetProps) {
     [opts.show],
   )
   const state = usePoll<WeatherData>('/api/weather', POLL_MS)
+  const ui = useUI()
+  const open = opts.full === 'true' ? undefined : () => ui.sheet(<WeatherFull />, { full: true })
   const ref = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState<Size | null>(null)
 
@@ -110,10 +116,19 @@ export function Weather({ opts }: WidgetProps) {
   }, [])
 
   return (
-    <div className="card wx-card" ref={ref}>
+    <div className="card wx-card" ref={ref} onClick={open}>
       <Body want={want} data={state.data} size={size} />
       <StaleNote state={state} />
     </div>
+  )
+}
+
+function WeatherFull() {
+  return (
+    <>
+      <div className="label full-title">Weather</div>
+      <div className="full-body is-fill"><Weather opts={{ show: 'current,hourly,daily', full: 'true' }} /></div>
+    </>
   )
 }
 

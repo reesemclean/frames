@@ -4,7 +4,7 @@ import path from 'node:path'
 import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { parseDashboard, listDashboards, loadDashboard, validateOptions, DEFAULT_OPTIONS } from '~/server/dashboards'
+import { parseDashboard, listDashboards, loadDashboard, dashboardVersion, validateOptions, DEFAULT_OPTIONS } from '~/server/dashboards'
 import { settings } from '~/server/config'
 import { DashboardTree, styleObject } from '~/components/DashboardTree'
 
@@ -61,7 +61,7 @@ describe('validateOptions', () => {
   it('keeps valid options', () => {
     const o = {
       night: { from: '22:00', to: '6:30' },
-      photos: { windows: [{ days: [0, 6], from: '09:00', to: '16:00' }], idleSec: 60, layout: 'pair', intervalSec: 8 },
+      photos: { idleSec: 60, dashboardEverySec: 300, dashboardForSec: 45, layout: 'pair', intervalSec: 8 },
       reloadAt: '04:15',
     }
     expect(validateOptions('x', o)).toEqual(o)
@@ -72,26 +72,19 @@ describe('validateOptions', () => {
     const o = validateOptions('x', {
       night: { from: 2130, to: '25:00' },
       photos: {
-        windows: [
-          { days: [0, 6], from: '09:00', to: '16:00' },
-          { days: 'weekends', from: '09:00', to: '16:00' },
-          { days: [7], from: '09:00', to: '10:00' },
-          { days: [1], from: '9', to: '10:00' },
-          null,
-        ],
-        idleSec: '120', layout: 'grid', intervalSec: -1,
+        idleSec: '120', layout: 'grid', intervalSec: -1, dashboardEverySec: 0, dashboardForSec: '1m',
       },
       reloadAt: null,
     })
     expect(o).toEqual({
       night: DEFAULT_OPTIONS.night,
-      photos: { ...DEFAULT_OPTIONS.photos, windows: [{ days: [0, 6], from: '09:00', to: '16:00' }] },
+      photos: DEFAULT_OPTIONS.photos,
       reloadAt: DEFAULT_OPTIONS.reloadAt,
     })
     expect(console.warn).toHaveBeenCalled()
   })
 
-  it.each([[[]], ['x'], [{ night: 'late', photos: [1] }], [{ photos: { windows: {} } }]])('survives %j', (raw) => {
+  it.each([[[]], ['x'], [{ night: 'late', photos: [1] }], [{ photos: { windows: [] } }]])('survives %j', (raw) => {
     expect(validateOptions('x', raw)).toEqual(DEFAULT_OPTIONS)
   })
 
@@ -123,6 +116,30 @@ describe('reserved slugs', () => {
     expect(loadDashboard('kitchen')?.slug).toBe('kitchen')
     listDashboards()
     expect(warn).toHaveBeenCalledTimes(5)
+  })
+})
+
+describe('dashboardVersion', () => {
+  let dir: string
+  const saved = settings.dashboardsDir
+  beforeEach(() => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dash-'))
+    fs.writeFileSync(path.join(dir, 'kitchen.html'), '<div></div>')
+    settings.dashboardsDir = dir
+  })
+  afterEach(() => {
+    settings.dashboardsDir = saved
+    fs.rmSync(dir, { recursive: true })
+  })
+
+  it("matches the page's version, holds still, and changes when the file does", () => {
+    const v = dashboardVersion('kitchen')
+    expect(v).toMatch(/^[0-9a-f]{16}$/)
+    expect(loadDashboard('kitchen')!.version).toBe(v)
+    expect(dashboardVersion('kitchen')).toBe(v)
+    fs.writeFileSync(path.join(dir, 'kitchen.html'), '<div>new</div>')
+    expect(dashboardVersion('kitchen')).not.toBe(v)
+    expect(dashboardVersion('nope')).toBeNull()
   })
 })
 

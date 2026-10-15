@@ -2,6 +2,7 @@
 // a <style> for its layout, and markup with data-widget elements. It is
 // parsed here into a plain tree that React renders on the server and
 // hydrates on the frame. Dashboard files are trusted (they live in git).
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { parse, type HTMLElement, type Node, NodeType } from 'node-html-parser'
@@ -19,10 +20,12 @@ export const DEFAULT_OPTIONS: DashboardOptions = {
   // Dim clock between these hours (zone-local, may wrap midnight).
   night: { from: '21:30', to: '06:00' },
   photos: {
-    // Inside a window, photos take over the screen after idleSec without a
-    // touch. days: 0 = Sunday. Outside every window the dashboard stays up.
-    windows: [],
+    // The slideshow is home (outside night hours). Every dashboardEverySec
+    // it stops on the dashboard for dashboardForSec; a tap shows the
+    // dashboard until idleSec without another.
     idleSec: 120,
+    dashboardEverySec: 600,
+    dashboardForSec: 60,
     layout: 'auto',
     intervalSec: 15,
   },
@@ -38,6 +41,8 @@ export type DNode =
 
 export interface Dashboard {
   slug: string
+  /** Changes with a new server (a deploy) or an edited file; see dashboardVersion. */
+  version: string
   tz: string
   options: DashboardOptions
   css: string
@@ -76,9 +81,6 @@ function isHHMM(v: unknown): v is string {
   return !!m && Number(m[1]) < 24 && Number(m[2]) < 60
 }
 const isPositive = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0
-const isWindow = (v: unknown): v is DashboardOptions['photos']['windows'][number] =>
-  isObj(v) && isHHMM(v.from) && isHHMM(v.to) && Array.isArray(v.days) &&
-  v.days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)
 
 export function validateOptions(slug: string, raw: unknown): DashboardOptions {
   const warn = (what: string, v: unknown) =>
@@ -94,18 +96,18 @@ export function validateOptions(slug: string, raw: unknown): DashboardOptions {
   const o = section('options', raw)
   const night = section('night', o.night)
   const photos = section('photos', o.photos)
-  let windows = D.photos.windows
-  if (Array.isArray(photos.windows)) {
-    windows = photos.windows.filter((w) => isWindow(w) || (warn('photos.windows entry', w), false))
-  } else if (photos.windows !== undefined) warn('photos.windows', photos.windows)
+  if (photos.windows !== undefined) {
+    console.warn(`[dashboards] ${slug}: photos.windows is gone (the slideshow runs all day); see dashboardEverySec`)
+  }
   return {
     night: {
       from: pick('night.from', night.from, isHHMM, D.night.from),
       to: pick('night.to', night.to, isHHMM, D.night.to),
     },
     photos: {
-      windows,
       idleSec: pick('photos.idleSec', photos.idleSec, isPositive, D.photos.idleSec),
+      dashboardEverySec: pick('photos.dashboardEverySec', photos.dashboardEverySec, isPositive, D.photos.dashboardEverySec),
+      dashboardForSec: pick('photos.dashboardForSec', photos.dashboardForSec, isPositive, D.photos.dashboardForSec),
       layout: pick('photos.layout', photos.layout,
         (v): v is DashboardOptions['photos']['layout'] => LAYOUTS.includes(v as never), D.photos.layout),
       intervalSec: pick('photos.intervalSec', photos.intervalSec, isPositive, D.photos.intervalSec),
@@ -192,10 +194,35 @@ export function parseDashboard(slug: string, html: string): Dashboard {
     }
   }
   const css = root.querySelectorAll('style').map((s) => s.rawText).join('\n')
-  return { slug, tz: settings.tz, options, css, tree: convert(root.childNodes) }
+  return { slug, version: '', tz: settings.tz, options, css, tree: convert(root.childNodes) }
+}
+
+export function dashboardExists(slug: string): boolean {
+  return SLUG.test(slug) && !RESERVED_SLUGS.has(slug) && listDashboards().includes(slug)
+}
+
+function readDashboard(slug: string): string {
+  return fs.readFileSync(path.join(settings.dashboardsDir, slug + '.html'), 'utf8')
+}
+
+// One per server process, on globalThis: Nitro can load this module twice
+// (the page render's bundle and the API's), and the two must agree, or every
+// frame would see a new version on each check and reload forever.
+const g = globalThis as unknown as { __framesBoot?: string }
+const BOOT = g.__framesBoot || (g.__framesBoot = String(Date.now()) + '-' + crypto.randomBytes(4).toString('hex'))
+
+function versionOf(text: string): string {
+  return crypto.createHash('sha1').update(BOOT).update('\0').update(text).digest('hex').slice(0, 16)
+}
+
+/** What a frame compares against the version in its page: a new server (so
+ * a deploy) or an edited dashboard file changes it. null for no dashboard. */
+export function dashboardVersion(slug: string): string | null {
+  return dashboardExists(slug) ? versionOf(readDashboard(slug)) : null
 }
 
 export function loadDashboard(slug: string): Dashboard | null {
-  if (!SLUG.test(slug) || RESERVED_SLUGS.has(slug) || !listDashboards().includes(slug)) return null
-  return parseDashboard(slug, fs.readFileSync(path.join(settings.dashboardsDir, slug + '.html'), 'utf8'))
+  if (!dashboardExists(slug)) return null
+  const text = readDashboard(slug)
+  return { ...parseDashboard(slug, text), version: versionOf(text) }
 }

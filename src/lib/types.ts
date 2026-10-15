@@ -88,8 +88,9 @@ export interface Stars {
 export interface DashboardOptions {
   night: { from: string; to: string }
   photos: {
-    windows: { days: number[]; from: string; to: string }[]
     idleSec: number
+    dashboardEverySec: number
+    dashboardForSec: number
     layout: 'auto' | 'cover' | 'pair' | 'collage' | 'polaroid'
     intervalSec: number
   }

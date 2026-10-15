@@ -2,6 +2,7 @@
 // timer, not in a component effect, so it survives a React tree that has
 // crashed or unmounted: a broken frame still gets its fresh start at 03:00.
 import * as time from './time'
+import { idleSec } from './mode'
 
 // Never in the first 10 minutes, so a frame booting at 03:00 can't loop.
 const MIN_UPTIME_MS = 600_000
@@ -33,5 +34,34 @@ export function scheduleDailyReload(at: unknown): void {
   // is the real clock here (no ?at= offset), in the household zone.
   timer = setInterval(() => {
     if (shouldReload(time.parts().mins, reloadAt, Date.now() - loadedAt)) location.reload()
+  }, CHECK_MS)
+}
+
+// The version check: every few minutes the frame asks the server for its
+// dashboard's version, and reloads when it differs from the one in its page
+// (a deploy, or an edited dashboard file). Only on a good answer: a failed
+// fetch or a 502 mid-restart just waits for the next check. Only when nobody
+// has touched the screen for a minute, so it never reloads under a finger.
+const VERSION_EVERY_MS = 5 * 60_000
+const VERSION_IDLE_SEC = 60
+let versionTimer: ReturnType<typeof setInterval> | null = null
+
+export function watchVersion(slug: string, version: string): void {
+  if (versionTimer || !version || /[?&]at=/.test(location.search)) return
+  let changed = false
+  let lastCheck = Date.now()
+  versionTimer = setInterval(() => {
+    if (changed) {
+      if (idleSec() >= VERSION_IDLE_SEC) location.reload()
+      return
+    }
+    if (Date.now() - lastCheck < VERSION_EVERY_MS) return
+    lastCheck = Date.now()
+    fetch('/api/version/' + encodeURIComponent(slug), { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { version?: unknown } | null) => {
+        if (j && typeof j.version === 'string' && j.version !== version) changed = true
+      })
+      .catch(() => {})
   }, CHECK_MS)
 }

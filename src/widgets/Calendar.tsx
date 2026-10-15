@@ -6,7 +6,7 @@
 // here reads the frame's own clock zone. Rows are memoized: the per-minute
 // tick only re-renders the rows whose past / now / next state changed.
 // Nothing scrolls: rows that don't fit become "+N more" (past rows go first,
-// quietly).
+// quietly). A tap opens the full-screen week (CalendarWeek).
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { WidgetProps } from '.'
 import { num } from '.'
@@ -14,6 +14,7 @@ import type { Calendar, CalendarEvent } from '~/lib/types'
 import { staleNote, usePoll, useRefresh } from '~/lib/api'
 import { useMinute } from '~/lib/clock'
 import * as time from '~/lib/time'
+import { useUI } from '~/components/ui'
 
 const PATH = '/api/calendar'
 const POLL_MS = 120_000
@@ -28,7 +29,7 @@ function tint(hex: string, a: number): string {
 }
 
 function colors(ev: CalendarEvent): CSSProperties {
-  const c = HEX.test(ev.color || '') ? ev.color : '#7a756b'
+  const c = HEX.test(ev.color || '') ? ev.color : '#6b7480'
   return { '--c': c, '--ct': tint(c, 0.14) } as CSSProperties
 }
 
@@ -145,6 +146,8 @@ export function CalendarWidget({ opts }: WidgetProps) {
   const p = useMinute()
   const today = p.key
   const refresh = useRefresh()
+  const ui = useUI()
+  const open = () => ui.sheet(<CalendarWeek />, { full: true })
 
   // Everything time-dependent waits for the client: the server renders the
   // calm placeholder, and the first client render matches it exactly.
@@ -193,7 +196,7 @@ export function CalendarWidget({ opts }: WidgetProps) {
   const laterEmpty = days > 1 && later.length > 0 && !later.some((d) => d.events.length)
 
   return (
-    <div className={'card cal' + (days === 1 ? ' cal--today' : ' cal--week')}>
+    <div className={'card cal' + (days === 1 ? ' cal--today' : ' cal--week')} onClick={open}>
       <div className="cal-head">
         {title && <span className="label cal-title">{title}</span>}
         {days === 1 && <span className="cal-date">{mounted ? time.names.day(p.dow) + ', ' + time.names.monthShort(p.mo) + ' ' + p.d : ''}</span>}
@@ -222,5 +225,83 @@ export function CalendarWidget({ opts }: WidgetProps) {
       </div>
       <div className="cal-more" ref={moreRef} style={{ display: 'none' }} />
     </div>
+  )
+}
+
+// ------------------------------------------------------------------ week
+// The full-screen view: today and the next six days as columns. A column
+// that overflows hides its last events behind "+N more" (measured, as fit()).
+
+const WEEK = 7
+
+function fitColumn(col: HTMLElement): void {
+  const evs = Array.prototype.slice.call(col.querySelectorAll('.calw-ev')) as HTMLElement[]
+  const more = col.querySelector('.calw-more') as HTMLElement
+  evs.forEach((e) => { e.style.display = '' })
+  more.textContent = ''
+  if (!col.clientHeight) return
+  let hidden = 0
+  for (let i = evs.length - 1; i >= 0 && col.scrollHeight > col.clientHeight + 1; i--) {
+    evs[i].style.display = 'none'
+    hidden++
+    more.textContent = '+' + hidden + ' more'
+  }
+}
+
+const WeekEvent = memo(function WeekEvent({ ev, past }: { ev: CalendarEvent; past: boolean }) {
+  return (
+    <div className={'calw-ev' + (ev.allDay ? ' is-allday' : '') + (past ? ' is-past' : '')} style={colors(ev)}>
+      <b>{ev.title}</b>
+      <small>{range(ev)}</small>
+    </div>
+  )
+})
+
+export function CalendarWeek() {
+  const poll = usePoll<Calendar>(PATH, POLL_MS)
+  const p = useMinute()
+  const data = poll.data
+  const cols = useMemo(() => {
+    const out: { key: string; events: CalendarEvent[] }[] = []
+    for (let i = 0; i < WEEK; i++) {
+      const key = time.addDays(p.key, i)
+      const d = data ? data.days.filter((x) => x.key === key)[0] : null
+      out.push({ key, events: d ? d.events : [] })
+    }
+    return out
+  }, [data, p.key])
+  const root = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const el = root.current
+    if (!el) return
+    Array.prototype.forEach.call(el.querySelectorAll('.calw-evs'), (c: HTMLElement) => fitColumn(c))
+  }, [cols])
+
+  return (
+    <>
+      <div className="label full-title">
+        This week<span className="stale calw-stale">{staleNote(poll)}</span>
+      </div>
+      <div className="full-body calw" ref={root}>
+        {cols.map((c, i) => {
+          const d = c.key.split('-').map(Number)
+          return (
+            <section key={c.key} className={'card calw-day' + (i === 0 ? ' is-today' : '')}>
+              <div className="calw-dh">
+                <span className="label">{i === 0 ? 'Today' : time.names.dayShort(time.dowOf(c.key))}</span>
+                <span className="calw-d num">{d[2]}</span>
+              </div>
+              <div className="calw-evs">
+                {c.events.map((e) => (
+                  <WeekEvent key={e.id} ev={e} past={i === 0 && !e.allDay && !e.continues && e.end != null && e.end <= p.mins} />
+                ))}
+                {data && c.events.length === 0 && <div className="calw-free serif">Free</div>}
+                <div className="calw-more" />
+              </div>
+            </section>
+          )
+        })}
+      </div>
+    </>
   )
 }

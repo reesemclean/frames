@@ -5,13 +5,15 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 // ------------------------------------------------------------------ toasts
 interface ToastOpts { ms?: number; undo?: () => void; tone?: 'ok' | 'warn' }
 interface ToastItem extends ToastOpts { id: number; html: ReactNode }
-interface SheetItem { node: ReactNode; onClose?: () => void }
+interface SheetItem { node: ReactNode; onClose?: () => void; full?: boolean }
 
 interface UI {
   /** One toast at a time; the undo button runs `undo` once. */
   toast: (content: ReactNode, opts?: ToastOpts) => void
-  /** A modal card. Returns close(). */
-  sheet: (node: ReactNode, opts?: { onClose?: () => void }) => () => void
+  /** A modal card, or with `full` the whole stage (a widget's detail view,
+   * closed by a tap anywhere). Returns close(). The photos and night modes
+   * close it. */
+  sheet: (node: ReactNode, opts?: { onClose?: () => void; full?: boolean }) => () => void
   closeSheet: () => void
 }
 
@@ -45,8 +47,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     s.onClose?.()
   }, [])
 
-  const showSheet = useCallback((node: ReactNode, opts: { onClose?: () => void } = {}) => {
-    setSheet({ node, onClose: opts.onClose })
+  const showSheet = useCallback((node: ReactNode, opts: { onClose?: () => void; full?: boolean } = {}) => {
+    setSheet({ node, onClose: opts.onClose, full: opts.full })
     return closeSheet
   }, [closeSheet])
 
@@ -80,8 +82,9 @@ export function UIProvider({ children }: { children: ReactNode }) {
         {sheet && (
           <>
             <div className="sheet-scrim" onClick={closeSheet} />
-            <div className="sheet">
-              <button className="sheet-x" type="button" aria-label="Close" onClick={closeSheet}>×</button>
+            {/* Full: no ×, a tap anywhere closes it. */}
+            <div className={'sheet' + (sheet.full ? ' is-full' : '')} onClick={sheet.full ? closeSheet : undefined}>
+              {!sheet.full && <button className="sheet-x" type="button" aria-label="Close" onClick={closeSheet}>×</button>}
               {sheet.node}
             </div>
           </>
@@ -136,7 +139,7 @@ function trackPointers() {
  * panning, text selection and the long-press callout, so the style sets all
  * three.
  */
-export function useHold(ms: number, cb: { done: () => void; tap?: () => void; enabled?: () => boolean }) {
+export function useHold(ms: number, cb: { done: () => void; tap?: (e: React.PointerEvent) => void; enabled?: () => boolean }) {
   const cbRef = useRef(cb)
   cbRef.current = cb
   const t = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -163,7 +166,7 @@ export function useHold(ms: number, cb: { done: () => void; tap?: () => void; en
   const cancel = (e: React.PointerEvent) => {
     if (!t.current || e.pointerId !== id.current) return
     stop()
-    if (e.type === 'pointerup') cbRef.current.tap?.()
+    if (e.type === 'pointerup') cbRef.current.tap?.(e)
   }
 
   return {

@@ -152,6 +152,16 @@ try {
     })
   }
 
+  await check('GET /api/version/example matches the page; /nope 404', async () => {
+    const r = await get('/api/version/example')
+    expect(r.status === 200, `status ${r.status}`)
+    const v = json(r).version
+    expect(typeof v === 'string' && v.length > 0, r.body)
+    const page = await get('/example')
+    expect(page.body.includes(v), 'page has a different version (would reload forever)')
+    expect((await get('/api/version/nope')).status === 404, 'unknown slug not 404')
+  })
+
   await check('hashed /assets/* are immutable', async () => {
     const assets = [...new Set(page.match(/\/assets\/[\w.-]+\.(?:js|css)/g) || [])]
     expect(assets.length >= 2, `found ${assets.length} assets in /example`)

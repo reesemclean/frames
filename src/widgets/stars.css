@@ -65,7 +65,8 @@
   max-width: 100%; min-height: var(--tap); padding: 8px 24px; border-radius: 999px;
   background: var(--ink); color: var(--paper); font-size: 17px; font-weight: 800; line-height: 1.15; text-align: center;
 }
-.st-new > span { position: relative; }
+.st-new > span, .st-new > svg { position: relative; }
+.st-new-ic { display: none; width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
 .st-new::before {
   content: ''; position: absolute; top: 0; bottom: 0; left: 0; width: 100%;
   background: var(--c, var(--ok)); transform: scaleX(0); transform-origin: 0 50%;
@@ -87,3 +88,112 @@
 .st-kid.is-cheer .st-slot:nth-child(7) svg { animation-delay: .42s; }
 .st-kid.is-cheer .st-slot:nth-child(8) svg { animation-delay: .49s; }
 @keyframes st-hop { 0% { transform: none; } 40% { transform: translateY(-14%) scale(1.15); } 100% { transform: none; } }
+
+/* Stacked: each kid is a band, split by a rule rather than boxed (the card
+   is already a box). Name and count on one line, the goal under them, then
+   the stars at full row height, left-aligned with the text. */
+.st-kids.is-col { gap: 0; }
+.st-kids.is-col .st-kid {
+  position: relative; display: grid; column-gap: 12px; padding: 2px 2px 10px;
+  grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: "name count" "goal goal" "row row";
+  background: none; border-radius: 0;
+}
+.st-kids.is-col .st-kid + .st-kid { border-top: 2px solid var(--paper-2); padding-top: 14px; }
+.st-kids.is-col .st-kid:not(.is-done) .st-head,
+.st-kids.is-col .st-kid:not(.is-done) .st-foot { display: contents; }
+.st-kids.is-col .st-name { grid-area: name; max-width: none; align-self: baseline; line-height: 1.15; }
+.st-kids.is-col .st-goal { grid-area: goal; margin-top: 4px; line-height: 1.2; color: var(--ink-2); }
+.st-kids.is-col .st-count { grid-area: count; align-self: baseline; font-size: var(--st-goal, 22px); color: var(--mute); }
+.st-kids.is-col .st-hint { grid-area: goal; align-self: center; }
+.st-kids.is-col .st-kid.is-hint .st-goal { visibility: hidden; }
+.st-kids.is-col .st-row { grid-area: row; justify-content: flex-start; gap: 8px; padding: 10px 0 0; margin-left: -3px; }
+.st-kids.is-col .st-slot { flex: 0 1 auto; height: 100%; max-height: 64px; aspect-ratio: 1 / 1; }
+.st-kids.is-col .st-bar { left: 2px; right: 2px; bottom: 2px; }
+/* Done: a tinted box in the kid's colour (its own border replaces the
+   divider), the cheer and goal on the left, the new-chart button on the
+   right. */
+.st-kids.is-col .st-kid.is-done,
+.st-kids.is-col .st-kid + .st-kid.is-done {
+  grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: minmax(0, 1fr); grid-template-areas: "head foot";
+  align-items: center; column-gap: 14px;
+  margin: 4px 0; padding: 8px 10px 8px 16px; border: 2px solid var(--c); border-radius: var(--r-s);
+  background: var(--c-soft);
+}
+.st-kids.is-col .st-kid.is-done + .st-kid:not(.is-done) { border-top: 0; }
+.st-kids.is-col .st-kid.is-done .st-row { display: none; }
+.st-kids.is-col .st-donehead { grid-area: head; min-width: 0; }
+.st-kids.is-col .st-yay { font-size: var(--st-name, 28px); }
+/* The goal may take two lines; nothing beside it but the round button. */
+.st-kids.is-col .st-sub {
+  font-size: 16px; line-height: 1.2; margin-top: 2px; white-space: normal;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+.st-kids.is-col .st-sub.is-hint { color: var(--c-text, var(--ink)); }
+.st-kids.is-col .st-donefoot { grid-area: foot; }
+.st-kids.is-col .st-new { width: var(--tap); height: var(--tap); padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.st-kids.is-col .st-new-l { display: none; }
+.st-kids.is-col .st-new-ic { display: block; }
+
+/* The finished-chart confetti (confetti.ts): above the board, sheets and
+   toasts, below the photos and night overlays; never takes a tap. */
+.confetti { position: absolute; top: 0; left: 0; width: 1280px; height: 800px; z-index: 85; pointer-events: none; }
+
+/* The party's banner, flash and shake (confetti.ts). Transform and opacity
+   only. The banner sits under the confetti, the flash over everything but
+   the photos and night overlays. */
+.cele {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 84; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.cele-in {
+  text-align: center; opacity: 0; transform: scale(0);
+  animation: cele-in 7s linear forwards;
+}
+.cele-name {
+  font-size: 150px; font-weight: 900; line-height: .95; letter-spacing: -.03em; text-transform: uppercase;
+  color: var(--c); white-space: nowrap;
+  text-shadow: 0 0 0 #ffffff, 6px 6px 0 #ffffff, -6px -6px 0 #ffffff, 6px -6px 0 #ffffff, -6px 6px 0 #ffffff,
+    0 6px 0 #ffffff, 0 -6px 0 #ffffff, 6px 0 0 #ffffff, -6px 0 0 #ffffff, 0 14px 0 rgba(0, 0, 0, .25);
+}
+.cele-stars { font-size: 72px; line-height: 1; color: #ffc45c; letter-spacing: .08em; text-shadow: 0 4px 0 rgba(0, 0, 0, .2); margin-bottom: 10px; }
+.cele-goal {
+  display: inline-block; margin-top: 22px; padding: 10px 28px; border-radius: 999px;
+  background: #111111; color: #ffffff; font-size: 34px; font-weight: 800;
+}
+/* 0.9 s pop in with an overshoot, bob, then zoom off at ~6 s (of 7). */
+@keyframes cele-in {
+  0% { opacity: 0; transform: scale(0) rotate(-12deg); }
+  12.8% { opacity: 0; transform: scale(0) rotate(-12deg); }
+  17% { opacity: 1; transform: scale(1.3) rotate(4deg); }
+  20% { transform: scale(.92) rotate(-3deg); }
+  23% { transform: scale(1.06) rotate(1.5deg); }
+  26% { transform: scale(1) rotate(-1deg); }
+  40% { transform: scale(1.06) rotate(2deg); }
+  54% { transform: scale(1) rotate(-2deg); }
+  68% { transform: scale(1.06) rotate(2deg); }
+  80% { opacity: 1; transform: scale(1) rotate(0deg); }
+  88% { opacity: 0; transform: scale(2.2) rotate(6deg); }
+  100% { opacity: 0; transform: scale(2.2); }
+}
+.cele-flash {
+  position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 86; pointer-events: none;
+  background: #ffffff; opacity: 0; animation: cele-flash 7s linear forwards;
+}
+@keyframes cele-flash {
+  0%, 12.8% { opacity: 0; }
+  13.6% { opacity: .85; }
+  19% { opacity: 0; }
+  100% { opacity: 0; }
+}
+.board.is-shaking { animation: cele-shake .7s linear; }
+@keyframes cele-shake {
+  0%, 100% { transform: none; }
+  10% { transform: translate(-14px, 6px) rotate(-.6deg); }
+  20% { transform: translate(12px, -8px) rotate(.5deg); }
+  30% { transform: translate(-10px, -4px) rotate(-.4deg); }
+  40% { transform: translate(9px, 6px) rotate(.3deg); }
+  55% { transform: translate(-6px, 3px); }
+  70% { transform: translate(4px, -2px); }
+  85% { transform: translate(-2px, 1px); }
+}

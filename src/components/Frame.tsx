@@ -5,7 +5,7 @@ import { useEffect } from 'react'
 import type { Dashboard } from '~/server/dashboards'
 import * as time from '~/lib/time'
 import { retick, startClock } from '~/lib/clock'
-import { scheduleDailyReload } from '~/lib/reload'
+import { scheduleDailyReload, watchVersion } from '~/lib/reload'
 import { touched } from '~/lib/mode'
 import { DashboardOptionsContext } from '~/lib/dashboard'
 import { UIProvider } from './ui'
@@ -45,13 +45,14 @@ export function Frame({ dash }: { dash: Dashboard }) {
 
     // Module-level, so it outlives this effect (see lib/reload.ts).
     scheduleDailyReload(dash.options.reloadAt)
+    watchVersion(dash.slug, dash.version)
 
     window.FRAMES = { ...(window.FRAMES || {}), started: true }
     return () => {
       window.removeEventListener('resize', fit)
       document.removeEventListener('pointerdown', touch, true)
     }
-  }, [dash.options.reloadAt])
+  }, [dash.options.reloadAt, dash.slug, dash.version])
 
   return (
     <div className="stage" id="stage" data-mode="day">

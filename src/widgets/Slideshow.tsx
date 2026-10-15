@@ -12,7 +12,7 @@
 // SSR: the server and the first client render both show only the calm
 // placeholder. Every slide (and everything random or time-dependent about
 // it: the shuffle, the polaroid tilt, the caption date) arrives after mount.
-import { memo, useEffect, useRef, useState, type MouseEvent } from 'react'
+import { memo, useEffect, useRef, useState, type MutableRefObject } from 'react'
 import { staleNote, usePoll } from '~/lib/api'
 import type { Photo, Photos } from '~/lib/types'
 import { captionText, Engine, type Slide } from './slideshow-engine'
@@ -22,8 +22,8 @@ export interface SlideshowProps {
   intervalSec: number
   captions: boolean
   running: boolean
-  /** Tap left/right third → prev/next (the widget); off in full screen. */
-  tapZones?: boolean
+  /** Filled in with prev/next while mounted (the widget's tap zones). */
+  api?: MutableRefObject<{ prev(): void; next(): void } | null>
 }
 
 const FADE_MS = 900 // keep in step with slideshow.css
@@ -31,7 +31,7 @@ const POLL_MS = 10 * 60_000
 
 interface Shown { key: number; slide: Slide; w: number; h: number; captions: boolean }
 
-export function Slideshow({ layout, intervalSec, captions, running, tapZones }: SlideshowProps) {
+export function Slideshow({ layout, intervalSec, captions, running, api }: SlideshowProps) {
   const poll = usePoll<Photos>('/api/photos', POLL_MS)
   const list = poll.data ? poll.data.photos : null
   const [shown, setShown] = useState<Shown[]>([])
@@ -96,22 +96,20 @@ export function Slideshow({ layout, intervalSec, captions, running, tapZones }: 
     else e.stop()
   }, [running])
 
-  const onClick = tapZones
-    ? (ev: MouseEvent<HTMLDivElement>) => {
-        const e = engine.current
-        if (!e) return
-        const r = ev.currentTarget.getBoundingClientRect()
-        const x = (ev.clientX - r.left) / r.width
-        if (x < 1 / 3) void e.prev()
-        else if (x > 2 / 3) void e.next()
-      }
-    : undefined
+  useEffect(() => {
+    if (!api) return
+    api.current = {
+      prev: () => { if (engine.current) void engine.current.prev() },
+      next: () => { if (engine.current) void engine.current.next() },
+    }
+    return () => { api.current = null }
+  }, [api])
 
   let empty: string | null = null
   if (!shown.length) empty = !list ? staleNote(poll) : list.length ? '' : 'No photos yet'
 
   return (
-    <div className="ss" ref={root} onClick={onClick}>
+    <div className="ss" ref={root}>
       {empty != null && (
         <div className="ss-empty"><span className="ss-empty-msg">{empty}</span></div>
       )}

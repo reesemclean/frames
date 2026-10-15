@@ -26,8 +26,8 @@ one).
 {
   "night":  { "from": "21:30", "to": "06:00" },
   "photos": {
-    "windows": [{ "days": [0, 6], "from": "09:00", "to": "16:00" }],
-    "idleSec": 120, "layout": "auto", "intervalSec": 15
+    "idleSec": 120, "dashboardEverySec": 600, "dashboardForSec": 60,
+    "layout": "auto", "intervalSec": 15
   },
   "reloadAt": "03:00"
 }
@@ -46,12 +46,12 @@ one).
 </div>
 ```
 
-- **Options** (all optional; these are the defaults except `windows`, which
-  defaults to none):
+- **Options** (all optional; these are the defaults):
   - `night.from` / `night.to`: night hours, `HH:MM`, may wrap midnight.
-  - `photos.windows`: when the photo takeover may happen. `days` uses
-    0 = Sunday. Outside every window the dashboard stays up.
-  - `photos.idleSec`: seconds without a touch before the takeover.
+  - `photos.dashboardEverySec` / `photos.dashboardForSec`: the slideshow
+    stops on the dashboard every so often, for this long.
+  - `photos.idleSec`: after a tap, seconds without another before the
+    slideshow comes back.
   - `photos.layout`, `photos.intervalSec`: the full-screen slideshow (values
     as for the photos widget below; no captions, since the clock and weather
     strip own the bottom of the screen).
@@ -69,7 +69,7 @@ one).
 | `clock` | `data-seconds="true"` shows seconds. `data-size="auto\|s\|m\|l"`, default `auto` (scales to the cell). |
 | `weather` | `data-show`: comma list of `current`, `hourly`, `daily`. |
 | `calendar` | `data-days`: how many days from today (1 = today only, up to 7). `data-title`: heading text. |
-| `photos` | `data-layout="auto\|cover\|pair\|collage\|polaroid"`. `data-interval`: seconds per photo. `data-captions="false"` hides date/contributor captions. |
+| `photos` | `data-layout="auto\|cover\|pair\|collage\|polaroid"`. `data-interval`: seconds per photo. `data-captions="false"` hides date/contributor captions. Tap the left or right third for the previous or next photo; hold 2 s for the full-screen slideshow. |
 | `stars` | none. Shows every active kid's current chart; a parent gives a star on the frame (a quick tap doesn't), with undo right after. At the target the chart shows done until a parent starts the next one. Kids and goals are managed at `/admin`. |
 
 Every time shown and every schedule decision uses the household's zone
@@ -81,13 +81,14 @@ midnight, never instants, and renders in the same zone.
 
 | Mode | When |
 | --- | --- |
-| `day` | the dashboard |
-| `photos` | full-screen slideshow, inside a photos window after `idleSec` without a touch; a tap returns to `day` |
-| `night` | black screen with a dim clock, during night hours when idle |
+| `photos` | full-screen slideshow, the home screen outside night hours; a tap shows `day` |
+| `day` | the dashboard: after a tap until `idleSec` without one, and for `dashboardForSec` every `dashboardEverySec`. Also whenever there are no photos yet. |
+| `night` | black screen with a dim clock, during night hours when idle; the slideshow at the end of them |
 | `nightdash` | a tap at night shows the dashboard dimmed; back to `night` after 20 s idle |
 
 Previews on a computer: `?at=22:15` pins the clock to that time (zone-local),
-and `?mode=day|photos|night|nightdash` forces a mode until the next touch.
+and `?mode=day|photos|night|nightdash` forces a mode until the next touch
+(`?mode=day` is the one to use while editing a layout).
 On a keyboard, `p` / `n` / `d` switch to photos / night / day. The page scales
 the 1280×800 stage to fit a desktop window.
 

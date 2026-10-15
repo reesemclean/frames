@@ -56,31 +56,31 @@ export const Route = createFileRoute('/admin')({
 })
 
 const CSS = `
-html, body { height: auto; overflow: auto; background: #f2eee6; -webkit-user-select: text; user-select: text; }
+html, body { height: auto; overflow: auto; background: #e9edf1; -webkit-user-select: text; user-select: text; }
 body { font: 16px/1.4 system-ui, sans-serif; color: #111; touch-action: auto; }
 .adm { max-width: 640px; margin: 0 auto; padding: 16px; }
 .adm h1 { font-size: 26px; margin: 8px 0 16px; font-weight: 800; }
 .adm h2 { font-size: 20px; margin: 0; font-weight: 800; }
-.adm section { background: #fbf9f4; border: 2px solid #111; border-radius: 14px; padding: 16px; margin: 0 0 16px; }
+.adm section { background: #ffffff; border: 2px solid #111; border-radius: 14px; padding: 16px; margin: 0 0 16px; }
 .adm .kid h2 { display: flex; align-items: center; gap: 10px; }
 .adm .dot { width: 18px; height: 18px; border-radius: 50%; flex: none; }
 .adm .goal { margin: 6px 0 2px; font-size: 18px; }
 .adm .count { font-weight: 700; }
-.adm .muted { color: #7a756b; font-size: 14px; }
-.adm details { margin-top: 12px; border-top: 1px solid #d6cfc0; padding-top: 10px; }
+.adm .muted { color: #6b7480; font-size: 14px; }
+.adm details { margin-top: 12px; border-top: 1px solid #c9d1d9; padding-top: 10px; }
 .adm summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
 .adm form { margin: 10px 0 0; display: grid; gap: 8px; }
-.adm label { display: grid; gap: 4px; font-size: 14px; color: #3b3934; }
-.adm input[type=text], .adm input[type=number] { font: inherit; padding: 10px; border: 1px solid #b9b1a2; border-radius: 8px; width: 100%; background: #fff; -webkit-user-select: text; user-select: text; }
-.adm input[type=color] { width: 64px; height: 44px; padding: 2px; border: 1px solid #b9b1a2; border-radius: 8px; background: #fff; }
-.adm button { font: inherit; font-weight: 700; padding: 12px 16px; border-radius: 10px; border: 0; background: #111; color: #fbf9f4; justify-self: start; }
-.adm button.quiet { background: #e8e2d5; color: #111; }
+.adm label { display: grid; gap: 4px; font-size: 14px; color: #353b42; }
+.adm input[type=text], .adm input[type=number] { font: inherit; padding: 10px; border: 1px solid #aab3bd; border-radius: 8px; width: 100%; background: #fff; -webkit-user-select: text; user-select: text; }
+.adm input[type=color] { width: 64px; height: 44px; padding: 2px; border: 1px solid #aab3bd; border-radius: 8px; background: #fff; }
+.adm button { font: inherit; font-weight: 700; padding: 12px 16px; border-radius: 10px; border: 0; background: #111; color: #ffffff; justify-self: start; }
+.adm button.quiet { background: #dde3e9; color: #111; }
 .adm table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 6px; }
-.adm td, .adm th { text-align: left; padding: 6px 4px; border-bottom: 1px solid #e8e2d5; }
+.adm td, .adm th { text-align: left; padding: 6px 4px; border-bottom: 1px solid #dde3e9; }
 .adm .msg { padding: 12px 14px; border-radius: 10px; margin: 0 0 16px; font-weight: 600; }
 .adm .msg.ok { background: #d7f0e4; }
 .adm .msg.err { background: #fbd9d6; }
-.adm footer { color: #7a756b; font-size: 13px; margin: 24px 0; }
+.adm footer { color: #6b7480; font-size: 13px; margin: 24px 0; }
 `
 
 function AdminPage() {
@@ -141,6 +141,18 @@ function KidSection({ kid, view }: { kid: AdminKid; view: AdminView }) {
           <p className="muted">Started {c.started}</p>
         </>
       ) : <p className="muted">No chart yet.</p>}
+      {c && (
+        <details>
+          <summary>Fix the star count</summary>
+          <form method="post" action="/admin">
+            <input type="hidden" name="op" value="count" />
+            <input type="hidden" name="kid" value={kid.id} />
+            <label>Stars so far <input type="number" name="count" defaultValue={c.count} min={0} max={c.target} required /></label>
+            <p className="muted">For a star given by mistake (or one that was missed). Same chart, same goal.</p>
+            <button>Save</button>
+          </form>
+        </details>
+      )}
       <details>
         <summary>New goal or target</summary>
         <form method="post" action="/admin">

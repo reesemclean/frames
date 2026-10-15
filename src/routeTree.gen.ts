@@ -18,6 +18,7 @@ import { Route as ApiPhotosRouteImport } from './routes/api/photos'
 import { Route as ApiWeatherRouteImport } from './routes/api/weather'
 import { Route as PhotosSplatRouteImport } from './routes/photos/$'
 import { Route as ApiStarsIndexRouteImport } from './routes/api/stars/index'
+import { Route as ApiVersionSlugRouteImport } from './routes/api/version/$slug'
 import { Route as ApiStarsKidAwardRouteImport } from './routes/api/stars/$kid/award'
 import { Route as ApiStarsKidNewChartRouteImport } from './routes/api/stars/$kid/new-chart'
 import { Route as ApiStarsAwardsIdRouteImport } from './routes/api/stars/awards/$id'
@@ -67,6 +68,11 @@ const ApiStarsIndexRoute = ApiStarsIndexRouteImport.update({
   path: '/api/stars/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVersionSlugRoute = ApiVersionSlugRouteImport.update({
+  id: '/api/version/$slug',
+  path: '/api/version/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStarsKidAwardRoute = ApiStarsKidAwardRouteImport.update({
   id: '/api/stars/$kid/award',
   path: '/api/stars/$kid/award',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/api/photos': typeof ApiPhotosRoute
   '/api/weather': typeof ApiWeatherRoute
   '/photos/$': typeof PhotosSplatRoute
+  '/api/version/$slug': typeof ApiVersionSlugRoute
   '/api/stars/': typeof ApiStarsIndexRoute
   '/api/stars/$kid/award': typeof ApiStarsKidAwardRoute
   '/api/stars/$kid/new-chart': typeof ApiStarsKidNewChartRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/api/photos': typeof ApiPhotosRoute
   '/api/weather': typeof ApiWeatherRoute
   '/photos/$': typeof PhotosSplatRoute
+  '/api/version/$slug': typeof ApiVersionSlugRoute
   '/api/stars': typeof ApiStarsIndexRoute
   '/api/stars/$kid/award': typeof ApiStarsKidAwardRoute
   '/api/stars/$kid/new-chart': typeof ApiStarsKidNewChartRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/api/photos': typeof ApiPhotosRoute
   '/api/weather': typeof ApiWeatherRoute
   '/photos/$': typeof PhotosSplatRoute
+  '/api/version/$slug': typeof ApiVersionSlugRoute
   '/api/stars/': typeof ApiStarsIndexRoute
   '/api/stars/$kid/award': typeof ApiStarsKidAwardRoute
   '/api/stars/$kid/new-chart': typeof ApiStarsKidNewChartRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/api/photos'
     | '/api/weather'
     | '/photos/$'
+    | '/api/version/$slug'
     | '/api/stars/'
     | '/api/stars/$kid/award'
     | '/api/stars/$kid/new-chart'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/api/photos'
     | '/api/weather'
     | '/photos/$'
+    | '/api/version/$slug'
     | '/api/stars'
     | '/api/stars/$kid/award'
     | '/api/stars/$kid/new-chart'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/api/photos'
     | '/api/weather'
     | '/photos/$'
+    | '/api/version/$slug'
     | '/api/stars/'
     | '/api/stars/$kid/award'
     | '/api/stars/$kid/new-chart'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   ApiPhotosRoute: typeof ApiPhotosRoute
   ApiWeatherRoute: typeof ApiWeatherRoute
   PhotosSplatRoute: typeof PhotosSplatRoute
+  ApiVersionSlugRoute: typeof ApiVersionSlugRoute
   ApiStarsIndexRoute: typeof ApiStarsIndexRoute
   ApiStarsKidAwardRoute: typeof ApiStarsKidAwardRoute
   ApiStarsKidNewChartRoute: typeof ApiStarsKidNewChartRoute
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStarsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/version/$slug': {
+      id: '/api/version/$slug'
+      path: '/api/version/$slug'
+      fullPath: '/api/version/$slug'
+      preLoaderRoute: typeof ApiVersionSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stars/$kid/award': {
       id: '/api/stars/$kid/award'
       path: '/api/stars/$kid/award'
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPhotosRoute: ApiPhotosRoute,
   ApiWeatherRoute: ApiWeatherRoute,
   PhotosSplatRoute: PhotosSplatRoute,
+  ApiVersionSlugRoute: ApiVersionSlugRoute,
   ApiStarsIndexRoute: ApiStarsIndexRoute,
   ApiStarsKidAwardRoute: ApiStarsKidAwardRoute,
   ApiStarsKidNewChartRoute: ApiStarsKidNewChartRoute,

@@ -1,6 +1,6 @@
 // The frame's mode and idle time, readable from any component.
-//   day       the dashboard
-//   photos    full-screen slideshow (inside a photo window, after idle)
+//   day       the dashboard (after a tap, and on a schedule)
+//   photos    full-screen slideshow, the home screen outside night hours
 //   night     dim red clock (inside the night window, after idle)
 //   nightdash the dashboard, dimmed, after a tap at night
 import { useSyncExternalStore } from 'react'
@@ -21,6 +21,15 @@ export function onMode(fn: () => void): () => void { subs.add(fn); return () => 
 export function useMode(): Mode {
   return useSyncExternalStore(onMode, getMode, () => 'day' as Mode)
 }
+
+// A widget asking for a mode (the photos widget's tap starts the slideshow).
+// <Modes> owns the switch and registers itself here.
+let requester: ((m: Mode) => void) | null = null
+export function onRequestMode(fn: (m: Mode) => void): () => void {
+  requester = fn
+  return () => { if (requester === fn) requester = null }
+}
+export function requestMode(m: Mode): void { if (requester) requester(m) }
 
 export function touched(): void { lastTouch = Date.now() }
 /** Seconds since the last touch anywhere on the page. */
