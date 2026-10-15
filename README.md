@@ -69,7 +69,7 @@ one).
 | `clock` | `data-seconds="true"` shows seconds. `data-size="auto\|s\|m\|l"`, default `auto` (scales to the cell). |
 | `weather` | `data-show`: comma list of `current`, `hourly`, `daily`. |
 | `calendar` | `data-days`: how many days from today (1 = today only, up to 7). `data-title`: heading text. |
-| `photos` | `data-layout="auto\|cover\|pair\|collage\|polaroid"`. `data-interval`: seconds per photo. `data-captions="false"` hides date/contributor captions. Tap the left or right third for the previous or next photo; hold 2 s for the full-screen slideshow. |
+| `photos` | `data-layout="auto\|cover\|pair\|collage\|polaroid"`. `data-interval`: seconds per photo. `data-captions="false"` hides the date captions. Tap the left or right third for the previous or next photo; hold 2 s for the full-screen slideshow. |
 | `stars` | none. Shows every active kid's current chart; a parent gives a star on the frame (a quick tap doesn't), with undo right after. At the target the chart shows done until a parent starts the next one. Kids and goals are managed at `/admin`. |
 
 Every time shown and every schedule decision uses the household's zone

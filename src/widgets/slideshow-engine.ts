@@ -50,16 +50,12 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
-// "October 9, 2026 · Sam", in the household's zone (time.setZone), never
-// the frame's own.
+// "October 9, 2026", in the household's zone (time.setZone), never the
+// frame's own. Empty when the date isn't known.
 export function captionText(p: Photo): string {
-  const bits: string[] = []
-  if (p.taken) {
-    const t = time.parts(new Date(p.taken))
-    bits.push(time.names.month(t.mo) + ' ' + t.d + ', ' + t.y)
-  }
-  if (p.contributor) bits.push(p.contributor.split(' ')[0])
-  return bits.join(' · ')
+  if (!p.taken) return ''
+  const t = time.parts(new Date(p.taken))
+  return time.names.month(t.mo) + ' ' + t.d + ', ' + t.y
 }
 
 function shuffle<T>(a: T[]): T[] {

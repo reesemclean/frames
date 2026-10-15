@@ -691,11 +691,11 @@ describe('slideshow engine', async () => {
     const time = await import('~/lib/time')
     const p = { ...ph('a'), taken: Date.UTC(2026, 9, 10, 5, 30), contributor: 'Pat Example' }
     time.setZone('America/Phoenix')
-    expect(captionText(p)).toBe('October 9, 2026 · Pat') // New York would say October 10
+    expect(captionText(p)).toBe('October 9, 2026') // New York would say October 10
     time.setZone('America/New_York')
-    expect(captionText(p)).toBe('October 10, 2026 · Pat')
+    expect(captionText(p)).toBe('October 10, 2026')
     time.setZone('America/Phoenix')
-    expect(captionText({ ...p, taken: null, contributor: null })).toBe('')
+    expect(captionText({ ...p, taken: null })).toBe('')
   })
 
   it('drops a preload that finished after the album emptied', async () => {

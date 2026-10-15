@@ -36,7 +36,7 @@
   white-space: nowrap; overflow: hidden;
 }
 
-/* Small date + contributor, bottom-left, over a short shade. */
+/* Small date, bottom-left, over a short shade. */
 .ss-full::after, .ss-fit::after, .ss-pane::after {
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 22%;
   background: linear-gradient(0deg, rgba(0, 0, 0, .45), rgba(0, 0, 0, 0)); pointer-events: none;
